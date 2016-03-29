@@ -1,29 +1,52 @@
 var http = require("http");
+var request = require("request");
 var servers = [
-        "http://ncregion-na.org/bmlt/main_server",
-        "http://crna.org/main_server"
+    "http://bmlt.ncregion-na.org",
+    "http://crna.org"
 ];
-var completed_requests = 0;
+var rsvp = require('rsvp');
 
-http.createServer(function (serverRequest, serverResponse) {
-    console.log("request received: " + serverRequest.url);
-    servers.forEach(function(server) {
-        var responses = [];
-        console.log("retrieving: " + server + serverRequest.url);
-        http.get(server + serverRequest.url, function(res) {
-            res.on('data', function(chunk){
-                responses.push(chunk);
-            });
+http.createServer(function (req, res) {
+    console.log("request received: " + req.url);
+    if (req.url.indexOf("main_server") < 0) {
+        res.end("404");
+    }
 
-            res.on('end', function(){
-                if (completed_requests++ == servers.length - 1) {
-                    // All downloads are completed
-                    console.log('body:', responses.join());
+    var serverQueries = servers.map(function(server) {
+        return getJSON(server + req.url);
+    });
 
-                    serverResponse.write(responses.join());
-                    serverResponse.end();
-                }
-            });
-        });
-    })
+    rsvp.all(serverQueries).then(function(data) {
+        var combined = [];
+        for (var i = 0; i < data.length; i++) {
+            for (var j = 0; j < data[i].body.length; j++) {
+                combined.push(data[i].body[j]);
+            }
+        }
+
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify(combined));
+
+    }, function(error) {
+        res.writeHead(500);
+        res.end();
+        console.error(error);
+    });
 }).listen(8888);
+
+function getJSON(url) {
+    var promise = new rsvp.Promise(function(resolve, reject) {
+        request({
+            url: url,
+            json: true
+        }, function(error, response, body) {
+            if (error) {
+                reject(response);
+            } else {
+                resolve(response);
+            }
+        });
+    });
+
+    return promise;
+}

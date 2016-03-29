@@ -1,0 +1,25 @@
+{
+  "name": "bmlt-fed",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "dependencies": {
+    "request": "^2.69.0",
+    "rsvp": "^3.2.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://radius314@github.com/radius314/bmlt.fed.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/radius314/bmlt.fed/issues"
+  },
+  "homepage": "https://github.com/radius314/bmlt.fed#readme"
+}
