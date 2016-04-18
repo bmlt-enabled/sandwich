@@ -8,8 +8,9 @@ var rsvp = require('rsvp');
 
 http.createServer(function (req, res) {
     console.log('request received: ' + req.url);
-    if (req.url.indexOf('main_server') < 0 && req.url.indexOf('favicon') > -1) {
-        res.end('404');
+    if (req.url.indexOf('main_server') < 0 || req.url.indexOf('favicon') > -1) {
+        res.writeHead(404)
+        res.end();
     }
 
     var serverQueries = servers.map(function(server) {
@@ -40,7 +41,7 @@ http.createServer(function (req, res) {
                 }
             }
 
-            combined = [ combined[lowestVersionIndex] ];
+            combined = combined[lowestVersionIndex];
         } else if (req.url.indexOf('serverInfo') > -1) {
             combined = combined[0];
         }
