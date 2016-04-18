@@ -5,6 +5,7 @@ var servers = [
     "http://crna.org"
 ];
 var rsvp = require('rsvp');
+var asciiCodeInt = 65;
 
 http.createServer(function (req, res) {
     console.log('request received: ' + req.url);
@@ -22,6 +23,8 @@ http.createServer(function (req, res) {
         for (var i = 0; i < data.length; i++) {
             if (data[i].headers['content-type'] !== "application/xml") {
                 for (var j = 0; j < data[i].body.length; j++) {
+                    data[i].body[j].id = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].id;
+                    data[i].body[j].parent_id = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].parent_id;
                     combined.push(data[i].body[j]);
                 }
             } else {
