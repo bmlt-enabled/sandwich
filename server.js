@@ -20,7 +20,7 @@ http.createServer(function (req, res) {
     rsvp.all(serverQueries).then(function(data) {
         var combined = [];
         for (var i = 0; i < data.length; i++) {
-            if (data[i].headers['content-type'] === "application/json") {
+            if (data[i].headers['content-type'] !== "application/xml") {
                 for (var j = 0; j < data[i].body.length; j++) {
                     combined.push(data[i].body[j]);
                 }
