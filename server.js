@@ -45,7 +45,7 @@ http.createServer(function (req, res) {
             }
 
             combined = combined[lowestVersionIndex];
-        } else if (req.url.indexOf('serverInfo') > -1 || req.url.indexOf('xml') > -1) {
+        } else if (req.url.indexOf('serverInfo') > -1 || req.url.indexOf('xml') > -1 || req.url.indexOf('xsd') > -1) {
             combined = combined[0];
         }
 
