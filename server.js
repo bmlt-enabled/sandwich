@@ -21,7 +21,7 @@ http.createServer(function (req, res) {
     rsvp.all(serverQueries).then(function(data) {
         var combined = [];
         for (var i = 0; i < data.length; i++) {
-            if (data[i].headers['content-type'] !== "application/xml") {
+            if (data[i].headers['content-type'].indexOf("application/xml") < 0) {
                 for (var j = 0; j < data[i].body.length; j++) {
                     data[i].body[j].id = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].id;
                     data[i].body[j].parent_id = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].parent_id;
@@ -45,7 +45,7 @@ http.createServer(function (req, res) {
             }
 
             combined = combined[lowestVersionIndex];
-        } else if (req.url.indexOf('serverInfo') > -1) {
+        } else if (req.url.indexOf('serverInfo') > -1 || req.url.indexOf('xml') > -1) {
             combined = combined[0];
         }
 
