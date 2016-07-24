@@ -37,7 +37,9 @@ http.createServer(function (req, res) {
         if (req.url.indexOf('GetSearchResults') > - 1) {
             combined = combined.sort(function(a, b) {
                 return parseFloat(a['distance_in_miles'], 2) - parseFloat(b['distance_in_miles'], 2);
-            })
+            });
+
+            combined.splice(10, arr.length - 1);
         }
 
         if (req.url.indexOf('switcher=GetServerInfo') > -1) {
