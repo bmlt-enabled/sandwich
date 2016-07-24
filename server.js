@@ -39,7 +39,7 @@ http.createServer(function (req, res) {
                 return parseFloat(a['distance_in_miles'], 2) - parseFloat(b['distance_in_miles'], 2);
             });
 
-            combined.splice(10, arr.length - 1);
+            combined.splice(15, combined.length - 1);
         }
 
         if (req.url.indexOf('switcher=GetServerInfo') > -1) {
