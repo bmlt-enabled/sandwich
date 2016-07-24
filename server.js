@@ -7,7 +7,7 @@ var servers = [
 var rsvp = require('rsvp');
 var asciiCodeInt = 65;
 var distanceBufferMiles = 1;
-var resultSize = 15;
+var resultSize = 10;
 var sortMetric = 'distance_in_miles';
 
 http.createServer(function (req, res) {
