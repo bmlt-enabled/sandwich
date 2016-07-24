@@ -10,7 +10,7 @@ var asciiCodeInt = 65;
 http.createServer(function (req, res) {
     console.log('request received: ' + req.url);
     if (req.url.indexOf('main_server') < 0 || req.url.indexOf('favicon') > -1) {
-        res.writeHead(404)
+        res.writeHead(404);
         res.end();
     }
 
@@ -21,6 +21,7 @@ http.createServer(function (req, res) {
     rsvp.all(serverQueries).then(function(data) {
         var combined = [];
         for (var i = 0; i < data.length; i++) {
+            // TODO: this is a weird bug in the BMLT where it return text/html content-type headers
             if (data[i].headers['content-type'].indexOf("application/xml") < 0) {
                 for (var j = 0; j < data[i].body.length; j++) {
                     data[i].body[j].id = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].id;
@@ -30,6 +31,13 @@ http.createServer(function (req, res) {
             } else {
                 combined.push(data[i].body);
             }
+        }
+
+        // Sort search results
+        if (req.url.indexOf('GetSearchResults') > - 1) {
+            combined = combined.sort(function(a, b) {
+                return parseFloat(a['distance_in_miles'], 2) - parseFloat(b['distance_in_miles'], 2);
+            })
         }
 
         if (req.url.indexOf('switcher=GetServerInfo') > -1) {
@@ -64,6 +72,7 @@ http.createServer(function (req, res) {
 }).listen(8888);
 
 function getData(url, isJson) {
+    console.log("getData(): " + url);
     var promise = new rsvp.Promise(function(resolve, reject) {
         request({
             url: url,
