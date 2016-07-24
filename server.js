@@ -1,9 +1,6 @@
 var http = require("http");
 var request = require("request");
-var servers = [
-    "http://bmlt.ncregion-na.org",
-    "http://crna.org"
-];
+var servers;
 var rsvp = require('rsvp');
 var asciiCodeInt = 65;
 var distanceBufferMiles = 1;
@@ -14,7 +11,28 @@ http.createServer(function (req, res) {
     console.log('request received: ' + req.url);
     if (req.url.indexOf('main_server') < 0 || req.url.indexOf('favicon') > -1) {
         res.writeHead(404);
-        res.end();
+        res.end("404");
+        return
+    }
+
+    var settingToken = (req.url.substring(1, req.url.indexOf('/main_server/')));
+    req.url = req.url.replace("/" + settingToken, "");
+    if (settingToken == "dfb32b5bf254b39b56f24a435e22670e") {
+        servers = [
+            "http://bmlt.ncregion-na.org",
+            "http://crna.org"
+        ];
+    } else if (settingToken == "e4d84d69084b9bd67c7c0c2805a00cc9") {
+        servers = [
+            "http://bmlt.ncregion-na.org",
+            "http://crna.org",
+            "http://www.alnwfl.org",
+            "http://naflorida.org/bmlt_server/"
+        ];
+    } else {
+        res.writeHead(404);
+        res.end("404");
+        return;
     }
 
     var serverQueries = servers.map(function(server) {
@@ -78,7 +96,7 @@ http.createServer(function (req, res) {
         }
     }, function(error) {
         res.writeHead(500);
-        res.end();
+        res.end("500");
         console.error(error);
     });
 }).listen(8888);
