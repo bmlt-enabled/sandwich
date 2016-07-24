@@ -6,6 +6,9 @@ var servers = [
 ];
 var rsvp = require('rsvp');
 var asciiCodeInt = 65;
+var distanceBufferMiles = 1;
+var resultSize = 15;
+var sortMetric = 'distance_in_miles';
 
 http.createServer(function (req, res) {
     console.log('request received: ' + req.url);
@@ -36,10 +39,17 @@ http.createServer(function (req, res) {
         // Sort search results
         if (req.url.indexOf('GetSearchResults') > - 1) {
             combined = combined.sort(function(a, b) {
-                return parseFloat(a['distance_in_miles'], 2) - parseFloat(b['distance_in_miles'], 2);
+                return parseFloat(a[sortMetric]) - parseFloat(b[sortMetric]);
             });
 
-            combined.splice(15, combined.length - 1);
+            var checker = combined.slice(resultSize, combined.length - 1);
+            combined.splice(resultSize, combined.length - 1);
+
+            for (var c = 0; c < checker.length; c++) {
+                if (checker[c][sortMetric] - combined[combined.length - 1][sortMetric] <= distanceBufferMiles) {
+                    combined.push(checker[c]);
+                }
+            }
         }
 
         if (req.url.indexOf('switcher=GetServerInfo') > -1) {
