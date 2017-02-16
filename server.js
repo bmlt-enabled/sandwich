@@ -6,28 +6,29 @@ var asciiCodeInt = 65;
 var distanceBufferMiles = 1;
 var resultSize = 10;
 var sortMetric = 'distance_in_miles';
+var vdir = "bmltfed"
 
 http.createServer(function (req, res) {
     console.log('request received: ' + req.url);
-    if (req.url.indexOf('main_server') < 0 || req.url.indexOf('favicon') > -1) {
+    if (req.url.indexOf(vdir) < 0 || req.url.indexOf('favicon') > -1) {
         res.writeHead(404);
         res.end("404");
         return
     }
 
-    var settingToken = (req.url.substring(1, req.url.indexOf('/main_server/')));
-    req.url = req.url.replace("/" + settingToken, "");
+    var settingToken = (req.url.substring(1, req.url.indexOf('/' + vdir + '/')));
+    req.url = req.url.replace("/" + settingToken + "/" + vdir, "");
     if (settingToken == "dfb32b5bf254b39b56f24a435e22670e") {
         servers = [
-            "http://bmlt.ncregion-na.org",
-            "http://crna.org"
+            "http://bmlt.ncregion-na.org/main_server",
+            "http://crna.org/main_sever"
         ];
     } else if (settingToken == "e4d84d69084b9bd67c7c0c2805a00cc9") {
         servers = [
-            "http://bmlt.ncregion-na.org",
-            "http://crna.org",
-            "http://www.alnwfl.org",
-            "http://naflorida.org/bmlt_server/"
+            "http://bmlt.ncregion-na.org/main_server",
+            "http://crna.org/main_server",
+            "http://www.alnwfl.org/main_server",
+            "http://naflorida.org/bmlt_server"
         ];
     } else {
         res.writeHead(404);
@@ -45,8 +46,13 @@ http.createServer(function (req, res) {
             // TODO: this is a weird bug in the BMLT where it return text/html content-type headers
             if (data[i].headers['content-type'].indexOf("application/xml") < 0) {
                 for (var j = 0; j < data[i].body.length; j++) {
-                    data[i].body[j].id = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].id;
-                    data[i].body[j].parent_id = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].parent_id;
+                    if (req.url.indexOf('GetSearchResults') > - 1) {
+                        data[i].body[j].service_body_bigint = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].service_body_bigint;
+                    } else {
+                        data[i].body[j].id = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].id;
+                        data[i].body[j].parent_id = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].parent_id;
+                    }
+
                     combined.push(data[i].body[j]);
                 }
             } else {
@@ -111,6 +117,7 @@ function getData(url, isJson) {
             if (error) {
                 reject(response);
             } else {
+                console.log("body array length: " + response.body.length + ", url: " + url)
                 resolve(response);
             }
         });
