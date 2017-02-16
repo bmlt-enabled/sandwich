@@ -7,21 +7,32 @@ var distanceBufferMiles = 1;
 var resultSize = 10;
 var sortMetric = 'distance_in_miles';
 var vdir = "bmltfed"
+var defaultVdir = "main_server"
 
 http.createServer(function (req, res) {
     console.log('request received: ' + req.url);
-    if (req.url.indexOf(vdir) < 0 || req.url.indexOf('favicon') > -1) {
+    if ((req.url.indexOf(vdir) < 0
+         && req.url.indexOf(defaultVdir) < 0)
+         || req.url.indexOf('favicon') > -1) {
         res.writeHead(404);
         res.end("404");
         return
     }
 
-    var settingToken = (req.url.substring(1, req.url.indexOf('/' + vdir + '/')));
-    req.url = req.url.replace("/" + settingToken + "/" + vdir, "");
+    var requestWithToken = req.url
+        .substring(1)
+        .replace("/" + vdir, "")
+        .replace("/" + defaultVdir, "");
+
+    var settingToken = requestWithToken
+        .substring(0, requestWithToken.indexOf("/"))
+
+    req.url = requestWithToken.replace(settingToken, "");
+
     if (settingToken == "dfb32b5bf254b39b56f24a435e22670e") {
         servers = [
             "http://bmlt.ncregion-na.org/main_server",
-            "http://crna.org/main_sever"
+            "http://crna.org/main_server"
         ];
     } else if (settingToken == "e4d84d69084b9bd67c7c0c2805a00cc9") {
         servers = [
