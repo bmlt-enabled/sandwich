@@ -123,12 +123,18 @@ function getData(url, isJson) {
     var promise = new rsvp.Promise(function(resolve, reject) {
         request({
             url: url,
-            json: isJson
+            json: isJson,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36'
+            }
         }, function(error, response, body) {
             if (error) {
                 reject(response);
             } else {
-                console.log("body array length: " + response.body.length + ", url: " + url)
+                console.log("body array length: " + body.length + ", url: " + url)
+                if (body.toString().indexOf("DOCTYPE") >= 0) {
+                    response.body = "";
+                }
                 resolve(response);
             }
         });
