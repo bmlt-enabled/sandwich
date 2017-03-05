@@ -131,9 +131,11 @@ function getData(url, isJson) {
             if (error) {
                 reject(response);
             } else {
-                console.log("body array length: " + body.length + ", url: " + url)
-                if (body.toString().indexOf("DOCTYPE") >= 0) {
-                    response.body = "";
+                if (body != null) {
+                    console.log("body array length: " + body.length + ", url: " + url)
+                    if (body.toString().indexOf("DOCTYPE") >= 0) {
+                        response.body = "";
+                    }
                 }
                 resolve(response);
             }
