@@ -6,8 +6,8 @@ var asciiCodeInt = 65;
 var distanceBufferMiles = 1;
 var resultSize = 10;
 var sortMetric = 'distance_in_miles';
-var vdir = "bmltfed"
-var defaultVdir = "main_server"
+var vdir = "bmltfed";
+var defaultVdir = "main_server";
 
 http.createServer(function (req, res) {
     console.log('request received: ' + req.url);
@@ -29,19 +29,8 @@ http.createServer(function (req, res) {
 
     req.url = requestWithToken.replace(settingToken, "");
 
-    if (settingToken == "dfb32b5bf254b39b56f24a435e22670e") {
-        servers = [
-            "http://bmlt.ncregion-na.org/main_server",
-            "http://crna.org/main_server"
-        ];
-    } else if (settingToken == "e4d84d69084b9bd67c7c0c2805a00cc9") {
-        servers = [
-            "http://bmlt.ncregion-na.org/main_server",
-            "http://crna.org/main_server",
-            "http://www.alnwfl.org/main_server",
-            "http://naflorida.org/bmlt_server",
-            "http://www.grscnabmlt.tk/main_server"
-        ];
+    if (settingToken == "_") {
+        servers = (process.env.BMLT_ROOT_SERVERS).split(",");
     } else {
         res.writeHead(404);
         res.end("404");
@@ -145,3 +134,5 @@ function getData(url, isJson) {
 
     return promise;
 }
+
+console.log("BMLTfed server started.")
