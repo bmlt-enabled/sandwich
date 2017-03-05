@@ -40,6 +40,7 @@ http.createServer(function (req, res) {
             "http://crna.org/main_server",
             "http://www.alnwfl.org/main_server",
             "http://naflorida.org/bmlt_server"
+            "http://www.grscnabmlt.tk/main_server"
         ];
     } else {
         res.writeHead(404);
