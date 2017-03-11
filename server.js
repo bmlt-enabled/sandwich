@@ -29,9 +29,9 @@ http.createServer(function (req, res) {
 
     req.url = requestWithToken.replace(settingToken, "");
 
-    if (settingToken == "_") {
-        servers = (process.env.BMLT_ROOT_SERVERS).split(",");
-    } else {
+    servers = getServers(settingToken);
+
+    if (servers.length == 0) {
         res.writeHead(404);
         res.end("404");
         return;
@@ -108,6 +108,15 @@ http.createServer(function (req, res) {
     });
 }).listen(8888);
 
+function getServers(settingToken) {
+    var settings = process.env["BMLT_ROOT_SERVERS" + (settingToken == "_" ? "" : "_" + settingToken)]
+    if (settings != null) {
+        return settings.split(",");
+    } else {
+        return [];
+    }
+}
+
 function getData(url, isJson) {
     console.log("getData(): " + url);
     var promise = new rsvp.Promise(function(resolve, reject) {
@@ -135,4 +144,4 @@ function getData(url, isJson) {
     return promise;
 }
 
-console.log("BMLTfed server started.")
+console.log("BMLT aggregator server started.");
