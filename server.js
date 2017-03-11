@@ -35,6 +35,8 @@ http.createServer(function (req, res) {
         res.writeHead(404);
         res.end("404");
         return;
+    } else {
+        console.log("Querying " + servers.length + " servers.");
     }
 
     var serverQueries = servers.map(function(server) {
@@ -42,6 +44,7 @@ http.createServer(function (req, res) {
     });
 
     rsvp.all(serverQueries).then(function(data) {
+        console.log("All requests received and returned.")
         var combined = [];
         for (var i = 0; i < data.length; i++) {
             // TODO: this is a weird bug in the BMLT where it return text/html content-type headers
@@ -125,9 +128,11 @@ function getData(url, isJson) {
             json: isJson,
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36'
-            }
+            },
+            timeout: 10000
         }, function(error, response, body) {
             if (error) {
+                console.error(url + ": " + error);
                 reject(response);
             } else {
                 if (body != null) {
