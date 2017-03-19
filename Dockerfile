@@ -1,9 +1,10 @@
 FROM node:7.7.0-alpine
 
-ADD . /opt
-
 WORKDIR /opt
+
+ADD server.js /opt
+ADD package.json /opt
 
 RUN npm install
 
-CMD ["node", "server.js"]
+CMD ["npm", "start"]

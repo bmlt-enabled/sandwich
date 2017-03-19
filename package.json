@@ -1,5 +1,5 @@
 {
-  "name": "bmlt-fed",
+  "name": "bmlt-aggregator",
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
@@ -14,12 +14,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://radius314@github.com/radius314/bmlt.fed.git"
+    "url": "git+https://radius314@github.com/radius314/bmlt-aggregator.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/radius314/bmlt.fed/issues"
+    "url": "https://github.com/radius314/bmlt-aggregator/issues"
   },
-  "homepage": "https://github.com/radius314/bmlt.fed#readme"
+  "homepage": "https://github.com/radius314/bmlt-aggregator#readme"
 }
