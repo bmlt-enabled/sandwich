@@ -91,8 +91,7 @@ var server = https.createServer(
                 var highestVersionIndex = 0;
                 var highestVersion = -1;
 
-                var combinedLength = combined.length;
-                for (var v = 0; v < combinedLength; v++) {
+                for (var v = 0; v < combined.length; v++) {
                     if (highestVersion == -1 || combined[v].versionInt > highestVersion) {
                         highestVersion = combined[v].versionInt;
                         highestVersionIndex = v;
@@ -104,7 +103,7 @@ var server = https.createServer(
                 combined[highestVersionIndex].semanticAdmin = '0';
                 combined = combined[highestVersionIndex];
             } else if (req.url.indexOf('serverInfo') > -1 || req.url.indexOf('xml') > -1 || req.url.indexOf('xsd') > -1) {
-                combined = combined[0];
+                combined = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<bmltInfo>\r\n<serverVersion>\r\n<readableString>4.0.0</readableString>\r\n</serverVersion>\r\n</bmltInfo>";
             }
 
             if (req.url.indexOf('json') > -1) {
