@@ -88,18 +88,21 @@ var server = https.createServer(
             }
 
             if (req.url.indexOf('switcher=GetServerInfo') > -1) {
-                var lowestVersion = -1;
-                var lowestVersionIndex = 0;
+                var highestVersionIndex = 0;
+                var highestVersion = -1;
 
                 var combinedLength = combined.length;
                 for (var v = 0; v < combinedLength; v++) {
-                    if (lowestVersion == -1 || lowestVersion > combined[v].versionInt) {
-                        lowestVersion = combined[v].versionInt;
-                        lowestVersionIndex = v;
+                    if (highestVersion == -1 || combined[v].versionInt > highestVersion) {
+                        highestVersion = combined[v].versionInt;
+                        highestVersionIndex = v;
                     }
                 }
 
-                combined = combined[lowestVersionIndex];
+                combined[highestVersionIndex].version = '4.0.0';
+                combined[highestVersionIndex].versionInt = '4000000';
+                combined[highestVersionIndex].semanticAdmin = '0';
+                combined = combined[highestVersionIndex];
             } else if (req.url.indexOf('serverInfo') > -1 || req.url.indexOf('xml') > -1 || req.url.indexOf('xsd') > -1) {
                 combined = combined[0];
             }
