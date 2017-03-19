@@ -1,7 +1,9 @@
-var http = require("http");
+var https = require("https");
 var request = require("request");
-var servers;
+var fs = require("fs");
 var rsvp = require('rsvp');
+var path = require('path');
+var servers;
 var asciiCodeInt = 65;
 var distanceBufferMiles = 1;
 var resultSize = 10;
@@ -9,106 +11,111 @@ var sortMetric = 'distance_in_miles';
 var vdir = "bmltfed";
 var defaultVdir = "main_server";
 
-http.createServer(function (req, res) {
-    console.log('request received: ' + req.url);
-    if ((req.url.indexOf(vdir) < 0
-         && req.url.indexOf(defaultVdir) < 0)
-         || req.url.indexOf('favicon') > -1) {
-        res.writeHead(404);
-        res.end("404");
-        return
-    }
-
-    var requestWithToken = req.url
-        .substring(1)
-        .replace("/" + vdir, "")
-        .replace("/" + defaultVdir, "");
-
-    var settingToken = requestWithToken
-        .substring(0, requestWithToken.indexOf("/"))
-
-    req.url = requestWithToken.replace(settingToken, "");
-
-    servers = getServers(settingToken);
-
-    if (servers.length == 0) {
-        res.writeHead(404);
-        res.end("404");
-        return;
-    } else {
-        console.log("Querying " + servers.length + " servers.");
-    }
-
-    var serverQueries = servers.map(function(server) {
-        return getData(server + req.url, (req.url.indexOf("json") > -1));
-    });
-
-    rsvp.all(serverQueries).then(function(data) {
-        console.log("All requests received and returned.")
-        var combined = [];
-        for (var i = 0; i < data.length; i++) {
-            // TODO: this is a weird bug in the BMLT where it return text/html content-type headers
-            if (data[i].headers['content-type'].indexOf("application/xml") < 0) {
-                for (var j = 0; j < data[i].body.length; j++) {
-                    if (req.url.indexOf('GetSearchResults') > - 1) {
-                        data[i].body[j].service_body_bigint = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].service_body_bigint;
-                    } else {
-                        data[i].body[j].id = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].id;
-                        data[i].body[j].parent_id = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].parent_id;
-                    }
-
-                    combined.push(data[i].body[j]);
-                }
-            } else {
-                combined.push(data[i].body);
-            }
+var server = https.createServer(
+    {
+        key: fs.readFileSync(path.join(__dirname, 'certs/bmlt-aggregator.archsearch.org.key')),
+        cert: fs.readFileSync(path.join(__dirname, 'certs/bmlt-aggregator.archsearch.org.crt'))
+    },
+    function (req, res) {
+        console.log('request received: ' + req.url);
+        if ((req.url.indexOf(vdir) < 0
+             && req.url.indexOf(defaultVdir) < 0)
+             || req.url.indexOf('favicon') > -1) {
+            res.writeHead(404);
+            res.end("404");
+            return
         }
 
-        // Sort search results
-        if (req.url.indexOf('GetSearchResults') > - 1) {
-            combined = combined.sort(function(a, b) {
-                return parseFloat(a[sortMetric]) - parseFloat(b[sortMetric]);
-            });
+        var requestWithToken = req.url
+            .substring(1)
+            .replace("/" + vdir, "")
+            .replace("/" + defaultVdir, "");
 
-            var checker = combined.slice(resultSize, combined.length - 1);
-            combined.splice(resultSize, combined.length - 1);
+        var settingToken = requestWithToken
+            .substring(0, requestWithToken.indexOf("/"))
 
-            for (var c = 0; c < checker.length; c++) {
-                if (checker[c][sortMetric] - combined[combined.length - 1][sortMetric] <= distanceBufferMiles) {
-                    combined.push(checker[c]);
-                }
-            }
-        }
+        req.url = requestWithToken.replace(settingToken, "");
 
-        if (req.url.indexOf('switcher=GetServerInfo') > -1) {
-            var lowestVersion = -1;
-            var lowestVersionIndex = 0;
+        servers = getServers(settingToken);
 
-            var combinedLength = combined.length;
-            for (var v = 0; v < combinedLength; v++) {
-                if (lowestVersion == -1 || lowestVersion > combined[v].versionInt) {
-                    lowestVersion = combined[v].versionInt;
-                    lowestVersionIndex = v;
-                }
-            }
-
-            combined = combined[lowestVersionIndex];
-        } else if (req.url.indexOf('serverInfo') > -1 || req.url.indexOf('xml') > -1 || req.url.indexOf('xsd') > -1) {
-            combined = combined[0];
-        }
-
-        if (req.url.indexOf('json') > -1) {
-            res.writeHead(200, {'Content-Type': 'application/json'});
-            res.end(JSON.stringify(combined));
+        if (servers.length == 0) {
+            res.writeHead(404);
+            res.end("404");
+            return;
         } else {
-            res.writeHead(200, {'Content-Type': 'application/xml'});
-            res.end(combined);
+            console.log("Querying " + servers.length + " servers.");
         }
-    }, function(error) {
-        res.writeHead(500);
-        res.end("500");
-        console.error(error);
-    });
+
+        var serverQueries = servers.map(function(server) {
+            return getData(server + req.url, (req.url.indexOf("json") > -1));
+        });
+
+        rsvp.all(serverQueries).then(function(data) {
+            console.log("All requests received and returned.")
+            var combined = [];
+            for (var i = 0; i < data.length; i++) {
+                // TODO: this is a weird bug in the BMLT where it return text/html content-type headers
+                if (data[i].headers['content-type'].indexOf("application/xml") < 0) {
+                    for (var j = 0; j < data[i].body.length; j++) {
+                        if (req.url.indexOf('GetSearchResults') > - 1) {
+                            data[i].body[j].service_body_bigint = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].service_body_bigint;
+                        } else {
+                            data[i].body[j].id = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].id;
+                            data[i].body[j].parent_id = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].parent_id;
+                        }
+
+                        combined.push(data[i].body[j]);
+                    }
+                } else {
+                    combined.push(data[i].body);
+                }
+            }
+
+            // Sort search results
+            if (req.url.indexOf('GetSearchResults') > - 1) {
+                combined = combined.sort(function(a, b) {
+                    return parseFloat(a[sortMetric]) - parseFloat(b[sortMetric]);
+                });
+
+                var checker = combined.slice(resultSize, combined.length - 1);
+                combined.splice(resultSize, combined.length - 1);
+
+                for (var c = 0; c < checker.length; c++) {
+                    if (checker[c][sortMetric] - combined[combined.length - 1][sortMetric] <= distanceBufferMiles) {
+                        combined.push(checker[c]);
+                    }
+                }
+            }
+
+            if (req.url.indexOf('switcher=GetServerInfo') > -1) {
+                var lowestVersion = -1;
+                var lowestVersionIndex = 0;
+
+                var combinedLength = combined.length;
+                for (var v = 0; v < combinedLength; v++) {
+                    if (lowestVersion == -1 || lowestVersion > combined[v].versionInt) {
+                        lowestVersion = combined[v].versionInt;
+                        lowestVersionIndex = v;
+                    }
+                }
+
+                combined = combined[lowestVersionIndex];
+            } else if (req.url.indexOf('serverInfo') > -1 || req.url.indexOf('xml') > -1 || req.url.indexOf('xsd') > -1) {
+                combined = combined[0];
+            }
+
+            if (req.url.indexOf('json') > -1) {
+                res.writeHead(200, {'Content-Type': 'application/json'});
+                res.end(JSON.stringify(combined));
+            } else {
+                res.writeHead(200, {'Content-Type': 'application/xml'});
+                res.end(combined);
+            }
+        }, function(error) {
+            res.writeHead(500);
+            res.end("500");
+            console.error(error);
+        });
 }).listen(8888);
 
 function getServers(settingToken) {
