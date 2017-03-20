@@ -105,8 +105,10 @@ function requestReceived (req, res) {
             combined[highestVersionIndex].versionInt = '4000000';
             combined[highestVersionIndex].semanticAdmin = '0';
             combined = combined[highestVersionIndex];
-        } else if (req.url.indexOf('serverInfo') > -1 || req.url.indexOf('xml') > -1 || req.url.indexOf('xsd') > -1) {
+        } else if (req.url.indexOf('serverInfo') > -1) {
             combined = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<bmltInfo>\r\n<serverVersion>\r\n<readableString>4.0.0</readableString>\r\n</serverVersion>\r\n</bmltInfo>";
+        } else if (req.url.indexOf('xml') > -1 || req.url.indexOf('xsd') > -1) {
+            combined = combined[0];
         }
 
         if (req.url.indexOf('json') > -1) {
