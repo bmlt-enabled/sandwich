@@ -1,3 +1,4 @@
+var http = require("http");
 var https = require("https");
 var request = require("request");
 var fs = require("fs");
@@ -10,115 +11,117 @@ var resultSize = 10;
 var sortMetric = 'distance_in_miles';
 var vdir = "bmltfed";
 var defaultVdir = "main_server";
+var ssl = {
+    key: fs.readFileSync(path.join(__dirname, 'certs/bmlt-aggregator.archsearch.org.key')),
+    cert: fs.readFileSync(path.join(__dirname, 'certs/bmlt-aggregator.archsearch.org.crt'))
+};
 
-var server = https.createServer(
-    {
-        key: fs.readFileSync(path.join(__dirname, 'certs/bmlt-aggregator.archsearch.org.key')),
-        cert: fs.readFileSync(path.join(__dirname, 'certs/bmlt-aggregator.archsearch.org.crt'))
-    },
-    function (req, res) {
-        console.log('request received: ' + req.url);
-        if ((req.url.indexOf(vdir) < 0
-             && req.url.indexOf(defaultVdir) < 0)
-             || req.url.indexOf('favicon') > -1) {
-            res.writeHead(404);
-            res.end("404");
-            return
-        }
+http.createServer(requestReceived).listen(8888);
+https.createServer(ssl, requestReceived).listen(8889);
 
-        var requestWithToken = req.url
-            .substring(1)
-            .replace("/" + vdir, "")
-            .replace("/" + defaultVdir, "");
+function requestReceived (req, res) {
+    console.log('request received: ' + req.url);
+    if ((req.url.indexOf(vdir) < 0
+        && req.url.indexOf(defaultVdir) < 0)
+        || req.url.indexOf('favicon') > -1) {
+        res.writeHead(404);
+        res.end("404");
+        return
+    }
 
-        var settingToken = requestWithToken
-            .substring(0, requestWithToken.indexOf("/"))
+    var requestWithToken = req.url
+        .substring(1)
+        .replace("/" + vdir, "")
+        .replace("/" + defaultVdir, "");
 
-        req.url = requestWithToken.replace(settingToken, "");
+    var settingToken = requestWithToken
+        .substring(0, requestWithToken.indexOf("/"))
 
-        servers = getServers(settingToken);
+    req.url = requestWithToken.replace(settingToken, "");
 
-        if (servers.length == 0) {
-            res.writeHead(404);
-            res.end("404");
-            return;
-        } else {
-            console.log("Querying " + servers.length + " servers.");
-        }
+    servers = getServers(settingToken);
 
-        var serverQueries = servers.map(function(server) {
-            return getData(server + req.url, (req.url.indexOf("json") > -1));
-        });
+    if (servers.length == 0) {
+        res.writeHead(404);
+        res.end("404");
+        return;
+    } else {
+        console.log("Querying " + servers.length + " servers.");
+    }
 
-        rsvp.all(serverQueries).then(function(data) {
-            console.log("All requests received and returned.")
-            var combined = [];
-            for (var i = 0; i < data.length; i++) {
-                // TODO: this is a weird bug in the BMLT where it return text/html content-type headers
-                if (data[i].headers['content-type'].indexOf("application/xml") < 0) {
-                    for (var j = 0; j < data[i].body.length; j++) {
-                        if (req.url.indexOf('GetSearchResults') > - 1) {
-                            data[i].body[j].service_body_bigint = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].service_body_bigint;
-                        } else {
-                            data[i].body[j].id = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].id;
-                            data[i].body[j].parent_id = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].parent_id;
-                        }
+    var serverQueries = servers.map(function(server) {
+        return getData(server + req.url, (req.url.indexOf("json") > -1));
+    });
 
-                        combined.push(data[i].body[j]);
+    rsvp.all(serverQueries).then(function(data) {
+        console.log("All requests received and returned.")
+        var combined = [];
+        for (var i = 0; i < data.length; i++) {
+            // TODO: this is a weird bug in the BMLT where it return text/html content-type headers
+            if (data[i].headers['content-type'].indexOf("application/xml") < 0) {
+                for (var j = 0; j < data[i].body.length; j++) {
+                    if (req.url.indexOf('GetSearchResults') > - 1) {
+                        data[i].body[j].service_body_bigint = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].service_body_bigint;
+                    } else {
+                        data[i].body[j].id = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].id;
+                        data[i].body[j].parent_id = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].parent_id;
                     }
-                } else {
-                    combined.push(data[i].body);
+
+                    combined.push(data[i].body[j]);
                 }
-            }
-
-            // Sort search results
-            if (req.url.indexOf('GetSearchResults') > - 1) {
-                combined = combined.sort(function(a, b) {
-                    return parseFloat(a[sortMetric]) - parseFloat(b[sortMetric]);
-                });
-
-                var checker = combined.slice(resultSize, combined.length - 1);
-                combined.splice(resultSize, combined.length - 1);
-
-                for (var c = 0; c < checker.length; c++) {
-                    if (checker[c][sortMetric] - combined[combined.length - 1][sortMetric] <= distanceBufferMiles) {
-                        combined.push(checker[c]);
-                    }
-                }
-            }
-
-            if (req.url.indexOf('switcher=GetServerInfo') > -1) {
-                var highestVersionIndex = 0;
-                var highestVersion = -1;
-
-                for (var v = 0; v < combined.length; v++) {
-                    if (highestVersion == -1 || combined[v].versionInt > highestVersion) {
-                        highestVersion = combined[v].versionInt;
-                        highestVersionIndex = v;
-                    }
-                }
-
-                combined[highestVersionIndex].version = '4.0.0';
-                combined[highestVersionIndex].versionInt = '4000000';
-                combined[highestVersionIndex].semanticAdmin = '0';
-                combined = combined[highestVersionIndex];
-            } else if (req.url.indexOf('serverInfo') > -1 || req.url.indexOf('xml') > -1 || req.url.indexOf('xsd') > -1) {
-                combined = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<bmltInfo>\r\n<serverVersion>\r\n<readableString>4.0.0</readableString>\r\n</serverVersion>\r\n</bmltInfo>";
-            }
-
-            if (req.url.indexOf('json') > -1) {
-                res.writeHead(200, {'Content-Type': 'application/json'});
-                res.end(JSON.stringify(combined));
             } else {
-                res.writeHead(200, {'Content-Type': 'application/xml'});
-                res.end(combined);
+                combined.push(data[i].body);
             }
-        }, function(error) {
-            res.writeHead(500);
-            res.end("500");
-            console.error(error);
-        });
-}).listen(8888);
+        }
+
+        // Sort search results
+        if (req.url.indexOf('GetSearchResults') > - 1) {
+            combined = combined.sort(function(a, b) {
+                return parseFloat(a[sortMetric]) - parseFloat(b[sortMetric]);
+            });
+
+            var checker = combined.slice(resultSize, combined.length - 1);
+            combined.splice(resultSize, combined.length - 1);
+
+            for (var c = 0; c < checker.length; c++) {
+                if (checker[c][sortMetric] - combined[combined.length - 1][sortMetric] <= distanceBufferMiles) {
+                    combined.push(checker[c]);
+                }
+            }
+        }
+
+        if (req.url.indexOf('switcher=GetServerInfo') > -1) {
+            var highestVersionIndex = 0;
+            var highestVersion = -1;
+
+            for (var v = 0; v < combined.length; v++) {
+                if (highestVersion == -1 || combined[v].versionInt > highestVersion) {
+                    highestVersion = combined[v].versionInt;
+                    highestVersionIndex = v;
+                }
+            }
+
+            combined[highestVersionIndex].version = '4.0.0';
+            combined[highestVersionIndex].versionInt = '4000000';
+            combined[highestVersionIndex].semanticAdmin = '0';
+            combined = combined[highestVersionIndex];
+        } else if (req.url.indexOf('serverInfo') > -1 || req.url.indexOf('xml') > -1 || req.url.indexOf('xsd') > -1) {
+            combined = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<bmltInfo>\r\n<serverVersion>\r\n<readableString>4.0.0</readableString>\r\n</serverVersion>\r\n</bmltInfo>";
+        }
+
+        if (req.url.indexOf('json') > -1) {
+            res.writeHead(200, {'Content-Type': 'application/json'});
+            res.end(JSON.stringify(combined));
+        } else {
+            res.writeHead(200, {'Content-Type': 'application/xml'});
+            res.end(combined);
+        }
+    }, function(error) {
+        res.writeHead(500);
+        res.end("500");
+        console.error(error);
+    });
+}
 
 function getServers(settingToken) {
     var settings = process.env["BMLT_ROOT_SERVERS" + (settingToken == "_" ? "" : "_" + settingToken)]

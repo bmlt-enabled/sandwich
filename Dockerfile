@@ -7,4 +7,6 @@ ADD package.json /opt
 
 RUN npm install
 
+EXPOSE 8888 8889
+
 CMD ["npm", "start"]
