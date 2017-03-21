@@ -50,7 +50,7 @@ function requestReceived (req, res) {
         console.log("Querying " + servers.length + " servers.");
     }
 
-    if (req.url.indexOf("GetLangs.php")) {
+    if (req.url.indexOf("GetLangs.php") > -1) {
         var data = {"languages":[{"key":"en","name":"English","default":true},{"key":"de","name":"German"},{"key":"es","name":"Spanish"},{"key":"fr","name":"French"},{"key":"it","name":"Italian"},{"key":"sv","name":"Svenska"}]};
         return returnResponse(req, res, data);
     }
