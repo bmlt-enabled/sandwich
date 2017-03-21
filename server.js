@@ -8,6 +8,7 @@ var servers;
 var asciiCodeInt = 65;
 var distanceBufferMiles = 1;
 var resultSize = 10;
+var requestTimeoutMilliseconds = 10000;
 var sortMetric = 'distance_in_miles';
 var vdir = "bmltfed";
 var defaultVdir = "main_server";
@@ -105,6 +106,8 @@ function requestReceived (req, res) {
             combined[highestVersionIndex].versionInt = '4000000';
             combined[highestVersionIndex].semanticAdmin = '0';
             combined = combined[highestVersionIndex];
+        } else if (req.url.indexOf('GetLangs.php') > -1) {
+            combined = {"languages":[{"key":"en","name":"English","default":true},{"key":"de","name":"German"},{"key":"es","name":"Spanish"},{"key":"fr","name":"French"},{"key":"it","name":"Italian"},{"key":"sv","name":"Svenska"}]};
         } else if (req.url.indexOf('serverInfo') > -1) {
             combined = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<bmltInfo>\r\n<serverVersion>\r\n<readableString>4.0.0</readableString>\r\n</serverVersion>\r\n</bmltInfo>";
         } else if (req.url.indexOf('xml') > -1 || req.url.indexOf('xsd') > -1) {
@@ -143,7 +146,7 @@ function getData(url, isJson) {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36'
             },
-            timeout: 10000
+            timeout: requestTimeoutMilliseconds
         }, function(error, response, body) {
             if (error) {
                 console.error(url + ": " + error);
