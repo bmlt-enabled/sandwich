@@ -50,6 +50,11 @@ function requestReceived (req, res) {
         console.log("Querying " + servers.length + " servers.");
     }
 
+    if (req.url.indexOf("GetLangs.php")) {
+        var data = {"languages":[{"key":"en","name":"English","default":true},{"key":"de","name":"German"},{"key":"es","name":"Spanish"},{"key":"fr","name":"French"},{"key":"it","name":"Italian"},{"key":"sv","name":"Svenska"}]};
+        return returnResponse(req, res, data);
+    }
+
     var serverQueries = servers.map(function(server) {
         return getData(server + req.url, (req.url.indexOf("json") > -1));
     });
@@ -106,26 +111,30 @@ function requestReceived (req, res) {
             combined[highestVersionIndex].versionInt = '4000000';
             combined[highestVersionIndex].semanticAdmin = '0';
             combined = combined[highestVersionIndex];
-        } else if (req.url.indexOf('GetLangs.php') > -1) {
-            combined = {"languages":[{"key":"en","name":"English","default":true},{"key":"de","name":"German"},{"key":"es","name":"Spanish"},{"key":"fr","name":"French"},{"key":"it","name":"Italian"},{"key":"sv","name":"Svenska"}]};
         } else if (req.url.indexOf('serverInfo') > -1) {
             combined = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<bmltInfo>\r\n<serverVersion>\r\n<readableString>4.0.0</readableString>\r\n</serverVersion>\r\n</bmltInfo>";
         } else if (req.url.indexOf('xml') > -1 || req.url.indexOf('xsd') > -1) {
             combined = combined[0];
         }
 
-        if (req.url.indexOf('json') > -1) {
-            res.writeHead(200, {'Content-Type': 'application/json'});
-            res.end(JSON.stringify(combined));
-        } else {
-            res.writeHead(200, {'Content-Type': 'application/xml'});
-            res.end(combined);
-        }
+        returnResponse(req, res, combined);
     }, function(error) {
         res.writeHead(500);
         res.end("500");
         console.error(error);
     });
+}
+
+function returnResponse(req, res, data) {
+    if (req.url.indexOf('json') > -1) {
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify(data));
+    } else {
+        res.writeHead(200, {'Content-Type': 'application/xml'});
+        res.end(data);
+    }
+
+    return true;
 }
 
 function getServers(settingToken) {
