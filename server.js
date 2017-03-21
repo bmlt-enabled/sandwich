@@ -66,11 +66,12 @@ function requestReceived (req, res) {
             // TODO: this is a weird bug in the BMLT where it return text/html content-type headers
             if (data[i].headers['content-type'].indexOf("application/xml") < 0) {
                 for (var j = 0; j < data[i].body.length; j++) {
+                    var preIndex = i + 1;
                     if (req.url.indexOf('GetSearchResults') > - 1) {
-                        data[i].body[j].service_body_bigint = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].service_body_bigint;
+                        data[i].body[j].service_body_bigint = preIndex + data[i].body[j].service_body_bigint;
                     } else {
-                        data[i].body[j].id = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].id;
-                        data[i].body[j].parent_id = String.fromCharCode(asciiCodeInt + i) + data[i].body[j].parent_id;
+                        data[i].body[j].id = preIndex + data[i].body[j].id;
+                        data[i].body[j].parent_id = preIndex + data[i].body[j].parent_id;
                     }
 
                     combined.push(data[i].body[j]);
