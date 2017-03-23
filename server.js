@@ -159,8 +159,9 @@ function getData(url, isJson) {
             timeout: requestTimeoutMilliseconds
         }, function(error, response, body) {
             if (error) {
-                console.error(url + ": " + error);
-                reject(response);
+                response = {};
+                //console.error("\r\n" + url + ": " + error);
+                resolve(response);
             } else {
                 if (body != null) {
                     console.log("body array length: " + body.length + ", url: " + url)

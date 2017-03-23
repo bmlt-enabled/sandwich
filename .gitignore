@@ -2,3 +2,4 @@ node_modules
 .idea/
 dump.rdb
 certs/
+/nbproject/private/

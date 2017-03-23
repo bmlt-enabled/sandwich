@@ -1,7 +1,7 @@
 {
-  "name": "bmlt-aggregator",
-  "version": "1.0.0",
-  "description": "",
+  "name": "sandwich",
+  "version": "1.1.0",
+  "description": "Aggregates semantic interfaces from n+1 BMLT root servers",
   "main": "server.js",
   "dependencies": {
     "request": "^2.69.0",
@@ -14,12 +14,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://radius314@github.com/radius314/bmlt-aggregator.git"
+    "url": "git+https://radius314@github.com/radius314/sandwich.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/radius314/bmlt-aggregator/issues"
+    "url": "https://github.com/radius314/sandwich/issues"
   },
-  "homepage": "https://github.com/radius314/bmlt-aggregator#readme"
+  "homepage": "https://github.com/radius314/sandwichr#readme"
 }
