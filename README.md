@@ -1,5 +1,7 @@
 # sandwich
 
+![alt tag](/resources/sandwich.png)
+
 Aggregates responses from the semantic interface of n+1 BMLT root servers
 
 ### Sample queries
