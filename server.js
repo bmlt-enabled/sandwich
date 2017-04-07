@@ -20,7 +20,7 @@ var ssl = {
 http.createServer(requestReceived).listen(8888);
 https.createServer(ssl, requestReceived).listen(8889);
 
-function requestReceived (req, res) {
+function requestReceived(req, res) {
     console.log('request received: ' + req.url);
     if ((req.url.indexOf(vdir) < 0
         && req.url.indexOf(defaultVdir) < 0)
@@ -60,7 +60,13 @@ function requestReceived (req, res) {
     });
 
     rsvp.all(serverQueries).then(function(data) {
-        console.log("All requests received and returned.")
+        console.log("All requests received and returned.");
+        //Clean up bad results from servers
+        var k = data.length;
+        while (k--) {
+            if (data[k] == null) data.splice(k, 1)
+        }
+
         var combined = [];
         for (var i = 0; i < data.length; i++) {
             // TODO: this is a weird bug in the BMLT where it return text/html content-type headers
@@ -159,8 +165,7 @@ function getData(url, isJson) {
             timeout: requestTimeoutMilliseconds
         }, function(error, response, body) {
             if (error) {
-                response = {};
-                //console.error("\r\n" + url + ": " + error);
+                console.error("\r\n" + url + ": " + error);
                 resolve(response);
             } else {
                 if (body != null) {
