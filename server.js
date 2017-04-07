@@ -5,10 +5,9 @@ var fs = require("fs");
 var rsvp = require('rsvp');
 var path = require('path');
 var servers;
-var asciiCodeInt = 65;
 var distanceBufferMiles = 1;
 var resultSize = 10;
-var requestTimeoutMilliseconds = 10000;
+var requestTimeoutMilliseconds = 5000;
 var sortMetric = 'distance_in_miles';
 var vdir = "bmltfed";
 var defaultVdir = "main_server";
@@ -40,96 +39,99 @@ function requestReceived(req, res) {
 
     req.url = requestWithToken.replace(settingToken, "");
 
-    servers = getServers(settingToken);
+    getServers(settingToken).then(function(servers) {
+        console.log("Querying " + servers.length + " servers.");
 
-    if (servers.length == 0) {
+        if (req.url.indexOf("GetLangs.php") > -1) {
+            var data = {"languages":[{"key":"en","name":"English","default":true},{"key":"de","name":"German"},{"key":"es","name":"Spanish"},{"key":"fr","name":"French"},{"key":"it","name":"Italian"},{"key":"sv","name":"Svenska"}]};
+            return returnResponse(req, res, data);
+        }
+
+        return servers.map(function (server) {
+            return getData(server + req.url, (req.url.indexOf("json") > -1));
+        });
+    }).catch(function(error) {
+        console.error(error);
         res.writeHead(404);
         res.end("404");
-        return;
-    } else {
-        console.log("Querying " + servers.length + " servers.");
-    }
-
-    if (req.url.indexOf("GetLangs.php") > -1) {
-        var data = {"languages":[{"key":"en","name":"English","default":true},{"key":"de","name":"German"},{"key":"es","name":"Spanish"},{"key":"fr","name":"French"},{"key":"it","name":"Italian"},{"key":"sv","name":"Svenska"}]};
-        return returnResponse(req, res, data);
-    }
-
-    var serverQueries = servers.map(function(server) {
-        return getData(server + req.url, (req.url.indexOf("json") > -1));
+        reject();
+    }).then(function(serverQueries) {
+        return executeQueries(serverQueries);
     });
 
-    rsvp.all(serverQueries).then(function(data) {
-        console.log("All requests received and returned.");
-        //Clean up bad results from servers
-        var k = data.length;
-        while (k--) {
-            if (data[k] == null) data.splice(k, 1)
-        }
+    function executeQueries(serverQueries) {
+        return rsvp.all(serverQueries).then(function (data) {
+            console.log("All requests received and returned.");
+            // Clean up bad results from servers
+            var k = data.length;
+            while (k--) {
+                if (data[k] == null) data.splice(k, 1)
+            }
 
-        var combined = [];
-        for (var i = 0; i < data.length; i++) {
-            // TODO: this is a weird bug in the BMLT where it return text/html content-type headers
-            if (data[i].headers['content-type'].indexOf("application/xml") < 0) {
-                for (var j = 0; j < data[i].body.length; j++) {
-                    var preIndex = i + 1;
-                    if (req.url.indexOf('GetSearchResults') > - 1) {
-                        data[i].body[j].service_body_bigint = preIndex + data[i].body[j].service_body_bigint;
-                    } else {
-                        data[i].body[j].id = preIndex + data[i].body[j].id;
-                        data[i].body[j].parent_id = preIndex + data[i].body[j].parent_id;
+            var combined = [];
+            for (var i = 0; i < data.length; i++) {
+                // TODO: this is a weird bug in the BMLT where it return text/html content-type headers
+                if (data[i].headers['content-type'].indexOf("application/xml") < 0) {
+                    for (var j = 0; j < data[i].body.length; j++) {
+                        var preIndex = i + 1;
+                        if (req.url.indexOf('GetSearchResults') > -1) {
+                            data[i].body[j].service_body_bigint = preIndex + data[i].body[j].service_body_bigint;
+                        } else {
+                            data[i].body[j].id = preIndex + data[i].body[j].id;
+                            data[i].body[j].parent_id = preIndex + data[i].body[j].parent_id;
+                        }
+
+                        combined.push(data[i].body[j]);
                     }
-
-                    combined.push(data[i].body[j]);
-                }
-            } else {
-                combined.push(data[i].body);
-            }
-        }
-
-        // Sort search results
-        if (req.url.indexOf('GetSearchResults') > - 1) {
-            combined = combined.sort(function(a, b) {
-                return parseFloat(a[sortMetric]) - parseFloat(b[sortMetric]);
-            });
-
-            var checker = combined.slice(resultSize, combined.length - 1);
-            combined.splice(resultSize, combined.length - 1);
-
-            for (var c = 0; c < checker.length; c++) {
-                if (checker[c][sortMetric] - combined[combined.length - 1][sortMetric] <= distanceBufferMiles) {
-                    combined.push(checker[c]);
-                }
-            }
-        }
-
-        if (req.url.indexOf('switcher=GetServerInfo') > -1) {
-            var highestVersionIndex = 0;
-            var highestVersion = -1;
-
-            for (var v = 0; v < combined.length; v++) {
-                if (highestVersion == -1 || combined[v].versionInt > highestVersion) {
-                    highestVersion = combined[v].versionInt;
-                    highestVersionIndex = v;
+                } else {
+                    combined.push(data[i].body);
                 }
             }
 
-            combined[highestVersionIndex].version = '4.0.0';
-            combined[highestVersionIndex].versionInt = '4000000';
-            combined[highestVersionIndex].semanticAdmin = '0';
-            combined = combined[highestVersionIndex];
-        } else if (req.url.indexOf('serverInfo') > -1) {
-            combined = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<bmltInfo>\r\n<serverVersion>\r\n<readableString>4.0.0</readableString>\r\n</serverVersion>\r\n</bmltInfo>";
-        } else if (req.url.indexOf('xml') > -1 || req.url.indexOf('xsd') > -1) {
-            combined = combined[0];
-        }
+            // Sort search results
+            if (req.url.indexOf('GetSearchResults') > -1) {
+                combined = combined.sort(function (a, b) {
+                    return parseFloat(a[sortMetric]) - parseFloat(b[sortMetric]);
+                });
 
-        returnResponse(req, res, combined);
-    }, function(error) {
-        res.writeHead(500);
-        res.end("500");
-        console.error(error);
-    });
+                var checker = combined.slice(resultSize, combined.length - 1);
+                combined.splice(resultSize, combined.length - 1);
+
+                for (var c = 0; c < checker.length; c++) {
+                    if (checker[c][sortMetric] - combined[combined.length - 1][sortMetric] <= distanceBufferMiles) {
+                        combined.push(checker[c]);
+                    }
+                }
+            }
+
+            if (req.url.indexOf('switcher=GetServerInfo') > -1) {
+                var highestVersionIndex = 0;
+                var highestVersion = -1;
+
+                for (var v = 0; v < combined.length; v++) {
+                    if (highestVersion == -1 || combined[v].versionInt > highestVersion) {
+                        highestVersion = combined[v].versionInt;
+                        highestVersionIndex = v;
+                    }
+                }
+
+                combined[highestVersionIndex].version = '4.0.0';
+                combined[highestVersionIndex].versionInt = '4000000';
+                combined[highestVersionIndex].semanticAdmin = '0';
+                combined = combined[highestVersionIndex];
+            } else if (req.url.indexOf('serverInfo') > -1) {
+                combined = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<bmltInfo>\r\n<serverVersion>\r\n<readableString>4.0.0</readableString>\r\n</serverVersion>\r\n</bmltInfo>";
+            } else if (req.url.indexOf('xml') > -1 || req.url.indexOf('xsd') > -1) {
+                combined = combined[0];
+            }
+
+            returnResponse(req, res, combined);
+        }, function (error) {
+            res.writeHead(500);
+            res.end("500");
+            console.error(error);
+        });
+    }
 }
 
 function returnResponse(req, res, data) {
@@ -145,17 +147,31 @@ function returnResponse(req, res, data) {
 }
 
 function getServers(settingToken) {
-    var settings = process.env["BMLT_ROOT_SERVERS" + (settingToken == "_" ? "" : "_" + settingToken)]
-    if (settings != null) {
-        return settings.split(",");
-    } else {
-        return [];
-    }
+    return new rsvp.Promise(function(resolve, reject) {
+        var settings = process.env["BMLT_ROOT_SERVERS" + (settingToken == "_" ? "" : "_" + settingToken)];
+
+        if (settings.indexOf("json:") == 0) {
+            getData(settings.replace("json:", ""), true).then(function(servers) {
+                var serversArray = [];
+                for (var s = 0; s < servers.body.length; s++) {
+                    serversArray.push(servers.body[s]["rootURL"]);
+                }
+                console.log(serversArray);
+                resolve(serversArray);
+            }).catch(function(error) {
+                reject(error);
+            });
+        } else if (settings != null) {
+            resolve(settings.split(","));
+        } else {
+            reject();
+        }
+    });
 }
 
 function getData(url, isJson) {
     console.log("getData(): " + url);
-    var promise = new rsvp.Promise(function(resolve, reject) {
+    return new rsvp.Promise(function (resolve, reject) {
         request({
             url: url,
             json: isJson,
@@ -163,7 +179,7 @@ function getData(url, isJson) {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36'
             },
             timeout: requestTimeoutMilliseconds
-        }, function(error, response, body) {
+        }, function (error, response, body) {
             if (error) {
                 console.error("\r\n" + url + ": " + error);
                 resolve(response);
@@ -178,8 +194,6 @@ function getData(url, isJson) {
             }
         });
     });
-
-    return promise;
 }
 
 console.log("BMLT aggregator server started.");
