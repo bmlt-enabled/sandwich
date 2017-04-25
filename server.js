@@ -2,7 +2,6 @@ var http = require("http");
 var https = require("https");
 var request = require("request");
 var fs = require("fs");
-var rsvp = require('rsvp');
 var path = require('path');
 var servers;
 var distanceBufferMiles = 1;
@@ -39,28 +38,23 @@ function requestReceived(req, res) {
 
     req.url = requestWithToken.replace(settingToken, "");
 
-    getServers(settingToken).then(function(servers) {
+    getServers(settingToken).then(servers => {
         console.log("Querying " + servers.length + " servers.");
 
-        if (req.url.indexOf("GetLangs.php") > -1) {
-            var data = {"languages":[{"key":"en","name":"English","default":true},{"key":"de","name":"German"},{"key":"es","name":"Spanish"},{"key":"fr","name":"French"},{"key":"it","name":"Italian"},{"key":"sv","name":"Svenska"}]};
-            return returnResponse(req, res, data);
-        }
-
-        return servers.map(function (server) {
+        return servers.map(server => {
             return getData(server + req.url, (req.url.indexOf("json") > -1));
         });
-    }).catch(function(error) {
+    }).catch(error => {
         console.error(error);
         res.writeHead(404);
         res.end("404");
         reject();
-    }).then(function(serverQueries) {
+    }).then(serverQueries => {
         return executeQueries(serverQueries);
     });
 
     function executeQueries(serverQueries) {
-        return rsvp.all(serverQueries).then(function (data) {
+        return Promise.all(serverQueries).then(data => {
             console.log("All requests received and returned.");
             // Clean up bad results from servers
             var k = data.length;
@@ -90,7 +84,7 @@ function requestReceived(req, res) {
 
             // Sort search results
             if (req.url.indexOf('GetSearchResults') > -1) {
-                combined = combined.sort(function (a, b) {
+                combined = combined.sort((a, b) => {
                     return parseFloat(a[sortMetric]) - parseFloat(b[sortMetric]);
                 });
 
@@ -126,7 +120,7 @@ function requestReceived(req, res) {
             }
 
             returnResponse(req, res, combined);
-        }, function (error) {
+        }, error => {
             res.writeHead(500);
             res.end("500");
             console.error(error);
@@ -135,30 +129,34 @@ function requestReceived(req, res) {
 }
 
 function returnResponse(req, res, data) {
-    if (req.url.indexOf('json') > -1) {
-        res.writeHead(200, {'Content-Type': 'application/json'});
-        res.end(JSON.stringify(data));
-    } else {
-        res.writeHead(200, {'Content-Type': 'application/xml'});
-        res.end(data);
-    }
+    req.url.indexOf('json') > -1 ? returnJSONResponse(res, data) : returnXMLResponse(res, data)
 
     return true;
 }
 
+function returnJSONResponse(res, data) {
+    res.writeHead(200, {'Content-Type': 'application/json'});
+    res.end(JSON.stringify(data));
+}
+
+function returnXMLResponse(res, data) {
+    res.writeHead(200, {'Content-Type': 'application/xml'});
+    res.end(data);
+}
+
 function getServers(settingToken) {
-    return new rsvp.Promise(function(resolve, reject) {
+    return new Promise((resolve, reject) => {
         var settings = process.env["BMLT_ROOT_SERVERS" + (settingToken == "_" ? "" : "_" + settingToken)];
 
         if (settings.indexOf("json:") == 0) {
-            getData(settings.replace("json:", ""), true).then(function(servers) {
+            getData(settings.replace("json:", ""), true).then(servers => {
                 var serversArray = [];
                 for (var s = 0; s < servers.body.length; s++) {
                     serversArray.push(servers.body[s]["rootURL"]);
                 }
                 console.log(serversArray);
                 resolve(serversArray);
-            }).catch(function(error) {
+            }).catch(error => {
                 reject(error);
             });
         } else if (settings != null) {
@@ -171,7 +169,7 @@ function getServers(settingToken) {
 
 function getData(url, isJson) {
     console.log("getData(): " + url);
-    return new rsvp.Promise(function (resolve, reject) {
+    return new Promise((resolve, reject) => {
         request({
             url: url,
             json: isJson,
@@ -179,7 +177,7 @@ function getData(url, isJson) {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36'
             },
             timeout: requestTimeoutMilliseconds
-        }, function (error, response, body) {
+        }, (error, response, body) => {
             if (error) {
                 console.error("\r\n" + url + ": " + error);
                 resolve(response);

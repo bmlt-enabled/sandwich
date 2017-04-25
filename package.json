@@ -4,8 +4,7 @@
   "description": "Aggregates semantic interfaces from n+1 BMLT root servers",
   "main": "server.js",
   "dependencies": {
-    "request": "^2.69.0",
-    "rsvp": "^3.2.1"
+    "request": "^2.69.0"
   },
   "devDependencies": {},
   "scripts": {
@@ -21,5 +20,5 @@
   "bugs": {
     "url": "https://github.com/radius314/sandwich/issues"
   },
-  "homepage": "https://github.com/radius314/sandwichr#readme"
+  "homepage": "https://github.com/radius314/sandwich#readme"
 }
