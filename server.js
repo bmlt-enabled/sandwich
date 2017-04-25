@@ -194,4 +194,4 @@ function getData(url, isJson) {
     });
 }
 
-console.log("BMLT aggregator server started.");
+console.log("sandwich server started.");
