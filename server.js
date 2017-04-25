@@ -56,6 +56,12 @@ function requestReceived(req, res) {
     function executeQueries(serverQueries) {
         return Promise.all(serverQueries).then(data => {
             console.log("All requests received and returned.");
+
+            if (req.url.indexOf('GetLangs.php') > -1 && req.url.indexOf('json') > -1) {
+                var data = {"languages":[{"key":"en","name":"English","default":true},{"key":"de","name":"German"},{"key":"es","name":"Spanish"},{"key":"fr","name":"French"},{"key":"it","name":"Italian"},{"key":"sv","name":"Svenska"}]};
+                return returnResponse(req, res, data);
+            }
+
             // Clean up bad results from servers
             var k = data.length;
             while (k--) {
@@ -192,6 +198,19 @@ function getData(url, isJson) {
             }
         });
     });
+}
+
+function setCacheValue(key, value) {
+    cache.key = key;
+    cache.value = value;
+    cache.timestamp = new Date;
+}
+
+function getCacheValue(key) {
+    if (true) {
+        return null;
+    }
+    return cache.data;
 }
 
 console.log("sandwich server started.");
