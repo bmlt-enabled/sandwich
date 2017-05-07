@@ -180,7 +180,7 @@ function getData(url, isJson) {
             url: url,
             json: isJson,
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36'
+                'User-Agent': 'Mozilla/4.0 (compatible; MSIE: 5.01; Windows NT 5.0)'
             },
             timeout: requestTimeoutMilliseconds
         }, (error, response, body) => {
