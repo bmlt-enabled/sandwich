@@ -5,6 +5,7 @@ var fs = require("fs");
 var path = require('path');
 var config = require('./config.js');
 var prepare = require('./lib/prepare.js');
+var urlUtils = require("url");
 var servers;
 var ssl = {
     key: fs.readFileSync(path.join(__dirname, 'certs/bmlt-aggregator.archsearch.org.key')),
@@ -86,7 +87,8 @@ function requestReceived(req, res) {
 
             // Sort search results
             if (req.url.indexOf('GetSearchResults') > -1) {
-                combined = prepare.getSearchResults(combined)
+                var sortKeys = urlUtils.parse(req.url, true).query.sort_keys
+                combined = prepare.getSearchResults(combined, sortKeys)
             }
 
             if (req.url.indexOf('switcher=GetServerInfo') > -1) {

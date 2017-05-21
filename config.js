@@ -2,7 +2,6 @@ module.exports = {
     distanceBufferMiles: 1,
     resultSize: 10,
     requestTimeoutMilliseconds: 5000,
-    sortMetric: 'distance_in_miles',
     vdir: 'bmltfed',
     defaultVdir: 'main_server',
     userAgent: 'Mozilla/4.0 (compatible; MSIE: 5.01; Windows NT 5.0)',
