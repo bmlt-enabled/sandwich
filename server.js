@@ -86,7 +86,7 @@ function requestReceived(req, res) {
             }
 
             // Sort search results
-            if (req.url.indexOf('GetSearchResults') > -1) {
+            if (req.url.indexOf('GetSearchResults') > -1 && req.url.indexOf('sort_keys') > -1) {
                 var sortKeys = urlUtils.parse(req.url, true).query.sort_keys
                 combined = prepare.getSearchResults(combined, sortKeys)
             }
