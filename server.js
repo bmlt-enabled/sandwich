@@ -3,13 +3,9 @@ var https = require("https");
 var request = require("request");
 var fs = require("fs");
 var path = require('path');
+var config = require('./config.js');
+var prepare = require('./lib/prepare.js');
 var servers;
-var distanceBufferMiles = 1;
-var resultSize = 10;
-var requestTimeoutMilliseconds = 5000;
-var sortMetric = 'distance_in_miles';
-var vdir = "bmltfed";
-var defaultVdir = "main_server";
 var ssl = {
     key: fs.readFileSync(path.join(__dirname, 'certs/bmlt-aggregator.archsearch.org.key')),
     cert: fs.readFileSync(path.join(__dirname, 'certs/bmlt-aggregator.archsearch.org.crt'))
@@ -20,8 +16,8 @@ https.createServer(ssl, requestReceived).listen(8889);
 
 function requestReceived(req, res) {
     console.log('request received: ' + req.url);
-    if ((req.url.indexOf(vdir) < 0
-        && req.url.indexOf(defaultVdir) < 0)
+    if ((req.url.indexOf(config.vdir) < 0
+        && req.url.indexOf(config.defaultVdir) < 0)
         || req.url.indexOf('favicon') > -1) {
         res.writeHead(404);
         res.end("404");
@@ -30,8 +26,8 @@ function requestReceived(req, res) {
 
     var requestWithToken = req.url
         .substring(1)
-        .replace("/" + vdir, "")
-        .replace("/" + defaultVdir, "");
+        .replace("/" + config.vdir, "")
+        .replace("/" + config.defaultVdir, "");
 
     var settingToken = requestWithToken
         .substring(0, requestWithToken.indexOf("/"))
@@ -58,7 +54,7 @@ function requestReceived(req, res) {
             console.log("All requests received and returned.");
 
             if (req.url.indexOf('GetLangs.php') > -1 && req.url.indexOf('json') > -1) {
-                var data = {"languages":[{"key":"en","name":"English","default":true},{"key":"de","name":"German"},{"key":"es","name":"Spanish"},{"key":"fr","name":"French"},{"key":"it","name":"Italian"},{"key":"sv","name":"Svenska"}]};
+                var data = languagesOverride;
                 return returnResponse(req, res, data);
             }
 
@@ -90,37 +86,13 @@ function requestReceived(req, res) {
 
             // Sort search results
             if (req.url.indexOf('GetSearchResults') > -1) {
-                combined = combined.sort((a, b) => {
-                    return parseFloat(a[sortMetric]) - parseFloat(b[sortMetric]);
-                });
-
-                var checker = combined.slice(resultSize, combined.length - 1);
-                combined.splice(resultSize, combined.length - 1);
-
-                for (var c = 0; c < checker.length; c++) {
-                    if (checker[c][sortMetric] - combined[combined.length - 1][sortMetric] <= distanceBufferMiles) {
-                        combined.push(checker[c]);
-                    }
-                }
+                combined = prepare.getSearchResults(combined)
             }
 
             if (req.url.indexOf('switcher=GetServerInfo') > -1) {
-                var highestVersionIndex = 0;
-                var highestVersion = -1;
-
-                for (var v = 0; v < combined.length; v++) {
-                    if (highestVersion == -1 || combined[v].versionInt > highestVersion) {
-                        highestVersion = combined[v].versionInt;
-                        highestVersionIndex = v;
-                    }
-                }
-
-                combined[highestVersionIndex].version = '4.0.0';
-                combined[highestVersionIndex].versionInt = '4000000';
-                combined[highestVersionIndex].semanticAdmin = '0';
-                combined = combined[highestVersionIndex];
+                combined = prepare.getServerInfo(combined)
             } else if (req.url.indexOf('serverInfo') > -1) {
-                combined = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<bmltInfo>\r\n<serverVersion>\r\n<readableString>4.0.0</readableString>\r\n</serverVersion>\r\n</bmltInfo>";
+                combined = config.serverInfoOverride;
             } else if (req.url.indexOf('xml') > -1 || req.url.indexOf('xsd') > -1) {
                 combined = combined[0];
             }
@@ -180,9 +152,9 @@ function getData(url, isJson) {
             url: url,
             json: isJson,
             headers: {
-                'User-Agent': 'Mozilla/4.0 (compatible; MSIE: 5.01; Windows NT 5.0)'
+                'User-Agent': config.userAgent
             },
-            timeout: requestTimeoutMilliseconds
+            timeout: config.requestTimeoutMilliseconds
         }, (error, response, body) => {
             if (error) {
                 console.error("\r\n" + url + ": " + error);
