@@ -4,6 +4,8 @@ module.exports = {
     requestTimeoutMilliseconds: 5000,
     vdir: 'bmltfed',
     defaultVdir: 'main_server',
+    distanceKey: 'distance_in_miles',
+    defaultSortKey: 'distance_in_miles',
     userAgent: 'Mozilla/4.0 (compatible; MSIE: 5.01; Windows NT 5.0)',
     versionOverride: '4.0.0',
     versionIntOverride: '4000000',

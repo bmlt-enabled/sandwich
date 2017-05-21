@@ -31,12 +31,12 @@ function requestReceived(req, res) {
         .replace("/" + config.defaultVdir, "");
 
     var settingToken = requestWithToken
-        .substring(0, requestWithToken.indexOf("/"))
+        .substring(0, requestWithToken.indexOf("/")) || requestWithToken
 
     req.url = requestWithToken.replace(settingToken, "");
 
     getServers(settingToken).then(servers => {
-        console.log("Querying " + servers.length + " servers.");
+        console.log("Querying " + servers.length + " servers.");    
 
         return servers.map(server => {
             return getData(server + req.url, (req.url.indexOf("json") > -1));
@@ -55,7 +55,7 @@ function requestReceived(req, res) {
             console.log("All requests received and returned.");
 
             if (req.url.indexOf('GetLangs.php') > -1 && req.url.indexOf('json') > -1) {
-                var data = languagesOverride;
+                var data = config.languagesOverride;
                 return returnResponse(req, res, data);
             }
 
@@ -86,9 +86,19 @@ function requestReceived(req, res) {
             }
 
             // Sort search results
-            if (req.url.indexOf('GetSearchResults') > -1 && req.url.indexOf('sort_keys') > -1) {
-                var sortKeys = urlUtils.parse(req.url, true).query.sort_keys
-                combined = prepare.getSearchResults(combined, sortKeys)
+            if (req.url.indexOf('GetSearchResults') > -1) {
+                if (req.url.indexOf('sort_keys') > -1) {
+                    var sortKeys = urlUtils.parse(req.url, true).query.sort_keys
+                    combined = prepare.getSearchResults(combined, sortKeys)
+                } else {
+                    combined = prepare.getSearchResults(combined, config.defaultSortKey)
+                }
+
+                combined = prepare.finalizeResults(combined);
+
+                for (c of combined) {
+                    console.log(c['distance_in_miles'])
+                }
             }
 
             if (req.url.indexOf('switcher=GetServerInfo') > -1) {

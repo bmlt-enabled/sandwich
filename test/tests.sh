@@ -1,0 +1,7 @@
+curl "http://localhost:8888/carolinas/bmltfed/main_server/client_interface/json/?switcher=GetServerInfo"
+curl "http://localhost:8888/carolinas/bmltfed/main_server/client_interface/serverInfo.xml"
+curl "http://localhost:8888/carolinas/bmltfed/main_server/client_interface/xml/index.php?switcher=GetFormats"
+curl "http://localhost:8888/carolinas/bmltfed/main_server/client_interface/xml/GetLangs.php"
+curl "http://localhost:8888/carolinas/bmltfed/main_server/client_interface/xml/GetServiceBodies.php"
+curl "http://localhost:8888/carolinas/bmltfed/main_server/client_interface/xsd/GetSearchResults.php"
+curl "http://localhost:8888/carolinas/bmltfed/main_server/client_interface/json/?switcher=GetSearchResults&weekdays[]=1&weekdays[]=2&lat_val=35.542279819197&long_val=-78.64231134299&geo_width=-20"
