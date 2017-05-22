@@ -36,6 +36,13 @@ function requestReceived(req, res) {
 
     req.url = requestWithToken.replace(settingToken, "");
 
+    if (req.url == "/purge") {
+        cache.del(settingToken)
+        res.writeHead(200);
+        res.end(settingToken + " cache purged.");
+        return
+    }
+
     getServers(settingToken).then(servers => {
         console.log("Querying " + servers.length + " servers.");    
 
