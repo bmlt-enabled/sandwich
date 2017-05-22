@@ -6,6 +6,7 @@ var path = require('path');
 var config = require('./config.js');
 var prepare = require('./lib/prepare.js');
 var urlUtils = require("url");
+var cache = require('memory-cache');
 var servers;
 var ssl = {
     key: fs.readFileSync(path.join(__dirname, 'certs/bmlt-aggregator.archsearch.org.key')),
@@ -95,10 +96,6 @@ function requestReceived(req, res) {
                 }
 
                 combined = prepare.finalizeResults(combined);
-
-                for (c of combined) {
-                    console.log(c['distance_in_miles'])
-                }
             }
 
             if (req.url.indexOf('switcher=GetServerInfo') > -1) {
@@ -136,15 +133,19 @@ function returnXMLResponse(res, data) {
 
 function getServers(settingToken) {
     return new Promise((resolve, reject) => {
-        var settings = process.env["BMLT_ROOT_SERVERS" + (settingToken == "_" ? "" : "_" + settingToken)];
+        var settings = process.env["BMLT_ROOT_SERVERS" + (settingToken == "_" ? "" : "_" + settingToken)]
 
-        if (settings.indexOf("json:") == 0) {
+        var serversArray = cache.get(settingToken) || []
+
+        if (serversArray.length > 0) {
+            console.log(settingToken + " cache hit")
+            resolve(serversArray)
+        } else if (settings.indexOf("json:") == 0) {
             getData(settings.replace("json:", ""), true).then(servers => {
-                var serversArray = [];
                 for (var s = 0; s < servers.body.length; s++) {
                     serversArray.push(servers.body[s]["rootURL"]);
                 }
-                console.log(serversArray);
+                cache.put(settingToken, serversArray, config.cacheTtlMs)
                 resolve(serversArray);
             }).catch(error => {
                 reject(error);
@@ -182,19 +183,6 @@ function getData(url, isJson) {
             }
         });
     });
-}
-
-function setCacheValue(key, value) {
-    cache.key = key;
-    cache.value = value;
-    cache.timestamp = new Date;
-}
-
-function getCacheValue(key) {
-    if (true) {
-        return null;
-    }
-    return cache.data;
 }
 
 console.log("sandwich server started.");

@@ -4,6 +4,8 @@
   "description": "Aggregates semantic interfaces from n+1 BMLT root servers",
   "main": "server.js",
   "dependencies": {
+    "geocoordinate": "^1.0.1",
+    "memory-cache": "^0.1.6",
     "request": "^2.69.0"
   },
   "devDependencies": {},
