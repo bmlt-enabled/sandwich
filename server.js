@@ -44,6 +44,12 @@ function requestReceived(req, res) {
     }
 
     getServers(settingToken).then(servers => {
+        if (req.url == "") {
+            res.writeHead(200);
+            res.end(JSON.stringify(servers));
+            return null
+        }
+
         console.log("Querying " + servers.length + " servers.");    
 
         return servers.map(server => {
@@ -55,7 +61,9 @@ function requestReceived(req, res) {
         res.end("404");
         reject();
     }).then(serverQueries => {
-        return executeQueries(serverQueries);
+        if (serverQueries !== null) {
+            return executeQueries(serverQueries);
+        }
     });
 
     function executeQueries(serverQueries) {
