@@ -9,8 +9,8 @@ var urlUtils = require("url");
 var cache = require('memory-cache');
 var servers;
 var ssl = {
-    key: fs.readFileSync(path.join(__dirname, 'certs/bmlt-aggregator.archsearch.org.key')),
-    cert: fs.readFileSync(path.join(__dirname, 'certs/bmlt-aggregator.archsearch.org.crt'))
+    key: fs.readFileSync(path.join(__dirname, 'certs/privkey.pem')),
+    cert: fs.readFileSync(path.join(__dirname, 'certs/cert.pem'))
 };
 
 http.createServer(requestReceived).listen(8888);
