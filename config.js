@@ -1,3 +1,6 @@
+var fs = require("fs");
+var path = require('path');
+
 module.exports = {
     distanceBufferMiles: 1,
     cacheTtlMs: 300000,
@@ -12,5 +15,9 @@ module.exports = {
     versionIntOverride: '4000000',
     semanticAdminOverride: '0',
     serverInfoOverride: '<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<bmltInfo>\r\n<serverVersion>\r\n<readableString>4.0.0</readableString>\r\n</serverVersion>\r\n</bmltInfo>',
-    languagesOverride: {"languages":[{"key":"en","name":"English","default":true},{"key":"de","name":"German"},{"key":"es","name":"Spanish"},{"key":"fr","name":"French"},{"key":"it","name":"Italian"},{"key":"sv","name":"Svenska"}]}
+    languagesOverride: {"languages":[{"key":"en","name":"English","default":true},{"key":"de","name":"German"},{"key":"es","name":"Spanish"},{"key":"fr","name":"French"},{"key":"it","name":"Italian"},{"key":"sv","name":"Svenska"}]},
+    ssl: {
+        key: fs.readFileSync(path.join(__dirname, 'certs/privkey.pem')),
+        cert: fs.readFileSync(path.join(__dirname, 'certs/cert.pem'))
+    }
 }

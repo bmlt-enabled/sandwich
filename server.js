@@ -1,20 +1,14 @@
 var http = require("http");
 var https = require("https");
 var request = require("request");
-var fs = require("fs");
-var path = require('path');
 var config = require('./config.js');
 var prepare = require('./lib/prepare.js');
 var urlUtils = require("url");
 var cache = require('memory-cache');
 var servers;
-var ssl = {
-    key: fs.readFileSync(path.join(__dirname, 'certs/privkey.pem')),
-    cert: fs.readFileSync(path.join(__dirname, 'certs/cert.pem'))
-};
 
 http.createServer(requestReceived).listen(8888);
-https.createServer(ssl, requestReceived).listen(8889);
+https.createServer(config.ssl, requestReceived).listen(8889);
 
 function requestReceived(req, res) {
     console.log('request received: ' + req.url);
@@ -53,7 +47,7 @@ function requestReceived(req, res) {
         console.log("Querying " + servers.length + " servers.");    
 
         return servers.map(server => {
-            return getData(server + req.url, (req.url.indexOf("json") > -1));
+            return getData(server["rootURL"] + req.url, (req.url.indexOf("json") > -1));
         });
     }).catch(error => {
         console.error(error);
@@ -158,7 +152,7 @@ function getServers(settingToken) {
         } else if (settings.indexOf("json:") == 0) {
             getData(settings.replace("json:", ""), true).then(servers => {
                 for (var s = 0; s < servers.body.length; s++) {
-                    serversArray.push(servers.body[s]["rootURL"]);
+                    serversArray.push({"rootURL":servers.body[s]["rootURL"]});
                 }
                 cache.put(settingToken, serversArray, config.cacheTtlMs)
                 resolve(serversArray);
