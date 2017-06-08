@@ -38,7 +38,7 @@ function requestReceived(req, res) {
     }
 
     getServers(settingToken).then(servers => {
-        if (req.url == "") {
+        if (req.url == "" || req.url == "/") {
             res.writeHead(200);
             res.end(JSON.stringify(servers));
             return null
@@ -151,24 +151,23 @@ function getServers(settingToken) {
             resolve(serversArray)
         } else if (settings.indexOf("json:") == 0) {
             getData(settings.replace("json:", ""), true).then(servers => {
-                coverageQueries = []
-                for (var s = 0; s < servers.body.length; s++) {
-                    serversArray.push({ "rootURL" : servers.body[s]["rootURL"] });
+                for (server of servers.body) {
+                    serversArray.push(server["rootURL"]);
                 }
 
                 return Promise.all(
                     serversArray.map(server => {
-                        coverageQuery = server["rootURL"] + "client_interface/json/?switcher=GetCoverageArea"
-                        return getData(coverageQuery, true, { "x-bmlt-root": server["rootURL"] })
+                        return getData(server + "client_interface/json/?switcher=GetCoverageArea", 
+                            true, { "x-bmlt-root": server })
                     })
                 )
             }).then(responses => {
                 serversArray = []
                 for (response of responses) {
-                    console.log(response.request.headers["x-bmlt-root"])
-                    serversArray.push({"rootURL": response.request.headers["x-bmlt-root"]},
-                        {"coverageArea": response.body[0]}
-                    )
+                    serversArray.push({
+                        "rootURL": response.request.headers["x-bmlt-root"],
+                        "coverageArea": response.body[0]
+                    })
                 }
                 cache.put(settingToken, serversArray, config.cacheTtlMs)
                 resolve(serversArray);
