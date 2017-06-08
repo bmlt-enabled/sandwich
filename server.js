@@ -151,8 +151,24 @@ function getServers(settingToken) {
             resolve(serversArray)
         } else if (settings.indexOf("json:") == 0) {
             getData(settings.replace("json:", ""), true).then(servers => {
+                coverageQueries = []
                 for (var s = 0; s < servers.body.length; s++) {
-                    serversArray.push({"rootURL":servers.body[s]["rootURL"]});
+                    serversArray.push({ "rootURL" : servers.body[s]["rootURL"] });
+                }
+
+                return Promise.all(
+                    serversArray.map(server => {
+                        coverageQuery = server["rootURL"] + "client_interface/json/?switcher=GetCoverageArea"
+                        return getData(coverageQuery, true, { "x-bmlt-root": server["rootURL"] })
+                    })
+                )
+            }).then(responses => {
+                serversArray = []
+                for (response of responses) {
+                    console.log(response.request.headers["x-bmlt-root"])
+                    serversArray.push({"rootURL": response.request.headers["x-bmlt-root"]},
+                        {"coverageArea": response.body[0]}
+                    )
                 }
                 cache.put(settingToken, serversArray, config.cacheTtlMs)
                 resolve(serversArray);
@@ -167,15 +183,19 @@ function getServers(settingToken) {
     });
 }
 
-function getData(url, isJson) {
+function getData(url, isJson, headers) {
     console.log("getData(): " + url);
+    if (headers == null) {
+        headers = { 'User-Agent': config.userAgent }
+    } else {
+        headers['User-Agent'] = config.userAgent;
+    }
+
     return new Promise((resolve, reject) => {
         request({
             url: url,
             json: isJson,
-            headers: {
-                'User-Agent': config.userAgent
-            },
+            headers: headers,
             timeout: config.requestTimeoutMilliseconds
         }, (error, response, body) => {
             if (error) {
