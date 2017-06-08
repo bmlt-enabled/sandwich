@@ -1,16 +1,21 @@
-var BoundingBox = require('geocoordinate').BoundingBox
-var bbox = new BoundingBox();
-
+var geolib = require('geolib')
 var coords = {
-  nw_corner_longitude: -84.028368,
-  nw_corner_latitude: 36.7554986,
-  se_corner_longitude: -76.7304894,
-  se_corner_latitude: 34.3095133
+  nw_corner_longitude: -115.9936056,
+  nw_corner_latitude: 39.9033762,
+  se_corner_longitude: -89.7567399,
+  se_corner_latitude: 26.2237111
 };
 
-bbox.pushCoordinate(coords.nw_corner_latitude, coords.se_corner_longitude);
-bbox.pushCoordinate(coords.se_corner_latitude, coords.nw_corner_longitude);
+function boxContains(box, latitude, longitude) {
+    return geolib.isPointInside(
+        {latitude: latitude, longitude: longitude},
+        [
+            {latitude: box.nw_corner_latitude, longitude: box.nw_corner_longitude},
+            {latitude: box.nw_corner_latitude, longitude: box.se_corner_longitude},
+            {latitude: box.se_corner_latitude, longitude: box.se_corner_longitude},
+            {latitude: box.se_corner_latitude, longitude: box.nw_corner_longitude}
+        ]
+    );
+}
 
-bbox.box();
-
-console.log(bbox.contains(35, -77));
+console.log(boxContains(coords, 27,-90))
