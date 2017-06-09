@@ -19,5 +19,20 @@ module.exports = {
     ssl: {
         key: fs.readFileSync(path.join(__dirname, 'certs/privkey.pem')),
         cert: fs.readFileSync(path.join(__dirname, 'certs/cert.pem'))
+    },
+    cachedEndpoints: [
+        "switcher=GetServerInfo",
+        "switcher=GetServiceBodies",
+        "switcher=GetFormats",
+        "GetLangs.php"
+    ],
+    cacheCheck: function(url) {
+        for (ce of this.cachedEndpoints) {
+            if (url.indexOf(ce) >= 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -71,7 +71,7 @@ function requestReceived(req, res) {
         console.log("Querying " + servers.length + " servers.");    
 
         return servers.map(server => {
-            return getData(server["rootURL"] + req.url, (req.url.indexOf("json") > -1));
+            return getData(server["rootURL"] + req.url, (req.url.indexOf("json") > -1), null, config.cacheCheck(req.url));
         });
     }).catch(error => {
         console.error(error);
@@ -191,8 +191,10 @@ function getServers(settingToken) {
     });
 }
 
-function getData(url, isJson, headers) {
-    console.log("getData(): " + url);
+function getData(url, isJson, headers, shouldCache) {
+    console.log("getData(shouldCache="+shouldCache+"): " + url)
+
+    // TODO: simplify
     if (headers == null) {
         headers = { 'User-Agent': config.userAgent }
     } else {
@@ -200,6 +202,12 @@ function getData(url, isJson, headers) {
     }
 
     return new Promise((resolve, reject) => {
+        if (shouldCache && cache.get(url) != null) {
+            console.log("cache hit: " + url)
+            resolve(cache.get(url))
+            return
+        }
+
         request({
             url: url,
             json: isJson,
@@ -216,6 +224,12 @@ function getData(url, isJson, headers) {
                         response.body = "";
                     }
                 }
+
+                if (shouldCache) {
+                    console.log("cache miss: " + url)
+                    cache.put(url, response, config.cacheTtlMs)
+                }
+                
                 resolve(response);
             }
         });
