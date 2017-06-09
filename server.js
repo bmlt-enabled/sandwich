@@ -58,6 +58,8 @@ function requestReceived(req, res) {
                     filteredServers.push(server)
                 }
             }
+
+            servers = filteredServers
         }
         
         if (req.url.indexOf("/filter?") >= 0) {
