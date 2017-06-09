@@ -44,6 +44,23 @@ function requestReceived(req, res) {
             res.writeHead(200);
             res.end(JSON.stringify(servers));
             return null
+        } else if (req.url.indexOf("/filter?") >= 0) {
+            var queryParams = urlUtils.parse(req.url, true).query
+            var lat = parseInt(queryParams["lat"])
+            var lon = parseInt(queryParams["lon"])
+
+            var filteredServers = []
+            for (server of servers) {
+                console.log(server["coverageArea"])
+                // support for BMLT roots pre - v2.8.16, no coverage areas so must be included
+                if (server["coverageArea"] == null || geolib.boxContains(server["coverageArea"], lat, lon)) {
+                    filteredServers.push(server)
+                }
+            }
+
+            res.writeHead(200);
+            res.end(JSON.stringify(filteredServers));
+            return null;
         }
 
         // TODO: add an endpoint which filters the servers result here.
@@ -57,7 +74,7 @@ function requestReceived(req, res) {
         console.error(error);
         res.writeHead(404);
         res.end("404");
-        reject();
+        return null
     }).then(serverQueries => {
         if (serverQueries !== null) {
             return executeQueries(serverQueries);
@@ -151,10 +168,11 @@ function getServers(settingToken) {
                 )
             }).then(responses => {
                 serversArray = []
-                for (response of responses) {
+                for (r of responses) {
+                    console.log(typeof r.body[0])
                     serversArray.push({
-                        "rootURL": response.request.headers["x-bmlt-root"],
-                        "coverageArea": response.body[0]
+                        "rootURL": r.request.headers["x-bmlt-root"],
+                        "coverageArea": (typeof r.body[0] == "object" ? r.body[0] : null)
                     })
                 }
                 cache.put(settingToken, serversArray, config.cacheTtlMs)
