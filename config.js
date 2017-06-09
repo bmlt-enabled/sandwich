@@ -24,7 +24,8 @@ module.exports = {
         "switcher=GetServerInfo",
         "switcher=GetServiceBodies",
         "switcher=GetFormats",
-        "GetLangs.php"
+        "GetLangs.php",
+        "GetServiceBodies.php"
     ],
     cacheCheck: function(url) {
         for (ce of this.cachedEndpoints) {
