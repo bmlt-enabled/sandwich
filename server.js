@@ -3,6 +3,8 @@ var https = require("https");
 var request = require("request");
 var config = require('./config.js');
 var prepare = require('./lib/prepare.js');
+var geolib = require('./lib/geo.js')
+var responselib = require('./lib/response.js')
 var urlUtils = require("url");
 var cache = require('memory-cache');
 var servers;
@@ -44,6 +46,8 @@ function requestReceived(req, res) {
             return null
         }
 
+        // TODO: add an endpoint which filters the servers result here.
+
         console.log("Querying " + servers.length + " servers.");    
 
         return servers.map(server => {
@@ -66,7 +70,7 @@ function requestReceived(req, res) {
 
             if (req.url.indexOf('GetLangs.php') > -1 && req.url.indexOf('json') > -1) {
                 var data = config.languagesOverride;
-                return returnResponse(req, res, data);
+                return responselib.returnResponse(req, res, data);
             }
 
             // Clean up bad results from servers
@@ -115,29 +119,13 @@ function requestReceived(req, res) {
                 combined = combined[0];
             }
 
-            returnResponse(req, res, combined);
+            responselib.returnResponse(req, res, combined);
         }, error => {
             res.writeHead(500);
             res.end("500");
             console.error(error);
         });
     }
-}
-
-function returnResponse(req, res, data) {
-    req.url.indexOf('json') > -1 ? returnJSONResponse(res, data) : returnXMLResponse(res, data)
-
-    return true;
-}
-
-function returnJSONResponse(res, data) {
-    res.writeHead(200, {'Content-Type': 'application/json'});
-    res.end(JSON.stringify(data));
-}
-
-function returnXMLResponse(res, data) {
-    res.writeHead(200, {'Content-Type': 'application/xml'});
-    res.end(data);
 }
 
 function getServers(settingToken) {
