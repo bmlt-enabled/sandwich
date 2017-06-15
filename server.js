@@ -14,8 +14,7 @@ https.createServer(config.ssl, requestReceived).listen(8889);
 
 function requestReceived(req, res) {
     console.log('request received: ' + req.url);
-    if ((req.url.indexOf(config.vdir) < 0
-        && req.url.indexOf(config.defaultVdir) < 0)
+    if ((req.url.indexOf(config.vdir) < 0)
         || req.url.indexOf('favicon') > -1) {
         res.writeHead(404);
         res.end("404");
@@ -25,7 +24,6 @@ function requestReceived(req, res) {
     var requestWithToken = req.url
         .substring(1)
         .replace("/" + config.vdir, "")
-        .replace("/" + config.defaultVdir, "");
 
     var settingToken = requestWithToken
         .substring(0, requestWithToken.indexOf("/")) || requestWithToken
