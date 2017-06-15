@@ -6,7 +6,7 @@ module.exports = {
     cacheTtlMs: 300000,
     resultSize: 10,
     requestTimeoutMilliseconds: 5000,
-    vdir: 'bmltfed',
+    vdir: 'sandwich',
     defaultVdir: 'main_server',
     distanceKey: 'distance_in_miles',
     defaultSortKey: 'distance_in_miles',

@@ -14,8 +14,7 @@ https.createServer(config.ssl, requestReceived).listen(8889);
 
 function requestReceived(req, res) {
     console.log('request received: ' + req.url);
-    if ((req.url.indexOf(config.vdir) < 0
-        && req.url.indexOf(config.defaultVdir) < 0)
+    if ((req.url.indexOf(config.vdir) < 0)
         || req.url.indexOf('favicon') > -1) {
         res.writeHead(404);
         res.end("404");
@@ -25,7 +24,6 @@ function requestReceived(req, res) {
     var requestWithToken = req.url
         .substring(1)
         .replace("/" + config.vdir, "")
-        .replace("/" + config.defaultVdir, "");
 
     var settingToken = requestWithToken
         .substring(0, requestWithToken.indexOf("/")) || requestWithToken
@@ -172,11 +170,15 @@ function getServers(settingToken) {
             }).then(responses => {
                 serversArray = []
                 for (r of responses) {
-                    serversArray.push({
-                        "rootURL": r.request.headers["x-bmlt-root"],
-                        // support for BMLT roots pre - v2.8.16, no coverage areas so must be included
-                        "coverageArea": (typeof r.body[0] == "object" ? r.body[0] : null)
-                    })
+                    if (r != null) {
+                        serversArray.push({
+                            "rootURL": r.request.headers["x-bmlt-root"],
+                            // support for BMLT roots pre - v2.8.16, no coverage areas so must be included
+                            "coverageArea": (typeof r.body[0] == "object" ? r.body[0] : null)
+                        })
+                    } else {
+                        console.log("No response from the other end, excluding it from the cache set.")
+                    }
                 }
                 cache.put(settingToken, serversArray, config.cacheTtlMs)
                 resolve(serversArray);

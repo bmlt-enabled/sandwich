@@ -1,4 +1,4 @@
-export BMLT_TEST_ROOT_SERVER=http://localhost:8888/_/bmltfed/main_server
+export BMLT_TEST_ROOT_SERVER=http://localhost:8888/_/sandwich
 #export BMLT_TEST_ROOT_SERVER=https://na-bmlt.org/eccbc87e4b5ce2fe28308fd9f2a7baf3/bmltfed/main_server
 echo "Test #1"
 curl "${BMLT_TEST_ROOT_SERVER}/client_interface/json/?switcher=GetServerInfo"
