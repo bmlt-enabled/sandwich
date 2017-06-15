@@ -172,11 +172,15 @@ function getServers(settingToken) {
             }).then(responses => {
                 serversArray = []
                 for (r of responses) {
-                    serversArray.push({
-                        "rootURL": r.request.headers["x-bmlt-root"],
-                        // support for BMLT roots pre - v2.8.16, no coverage areas so must be included
-                        "coverageArea": (typeof r.body[0] == "object" ? r.body[0] : null)
-                    })
+                    if (r != null) {
+                        serversArray.push({
+                            "rootURL": r.request.headers["x-bmlt-root"],
+                            // support for BMLT roots pre - v2.8.16, no coverage areas so must be included
+                            "coverageArea": (typeof r.body[0] == "object" ? r.body[0] : null)
+                        })
+                    } else {
+                        console.log("No response from the other end, excluding it from the cache set.")
+                    }
                 }
                 cache.put(settingToken, serversArray, config.cacheTtlMs)
                 resolve(serversArray);
