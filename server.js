@@ -170,7 +170,7 @@ function getServers(settingToken) {
             }).then(responses => {
                 serversArray = []
                 for (r of responses) {
-                    if (r != null) {
+                    if (r != null && r.body != null) {
                         serversArray.push({
                             "rootURL": r.request.headers["x-bmlt-root"],
                             // support for BMLT roots pre - v2.8.16, no coverage areas so must be included
