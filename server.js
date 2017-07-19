@@ -37,6 +37,12 @@ function requestReceived(req, res) {
         return
     }
 
+    if (req.url.indexOf("&get_formats_only") > -1) {
+        res.writeHead(200);
+        res.end("{}")
+        return
+    }
+
     getServers(settingToken).then(servers => {
         if (req.url == "" || req.url == "/") {
             res.writeHead(200);
