@@ -194,8 +194,6 @@ function getServers(settingToken) {
 }
 
 function getData(url, isJson, headers, shouldCache) {
-    console.log("getData(shouldCache="+shouldCache+"): " + url)
-
     // TODO: simplify
     if (headers == null) {
         headers = { 'User-Agent': config.userAgent }
