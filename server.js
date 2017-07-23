@@ -7,6 +7,7 @@ var geolib = require('./lib/geo.js')
 var responselib = require('./lib/response.js')
 var urlUtils = require("url");
 var cache = require('memory-cache');
+var hash = require('murmurhash')
 var servers;
 
 http.createServer(requestReceived).listen(8888);
@@ -36,6 +37,12 @@ function requestReceived(req, res) {
         res.end(settingToken + " cache purged.");
         return
     }
+
+    /*if (req.url.indexOf("&get_formats_only") > -1 || req.url.indexOf("&get_used_formats") > -1) {
+        res.writeHead(200);
+        res.end("{}")
+        return
+    }*/
 
     getServers(settingToken).then(servers => {
         if (req.url == "" || req.url == "/") {
@@ -102,12 +109,12 @@ function requestReceived(req, res) {
                 // TODO: this is a weird bug in the BMLT where it return text/html content-type headers
                 if (data[i].headers['content-type'].indexOf("application/xml") < 0) {
                     for (var j = 0; j < data[i].body.length; j++) {
-                        var preIndex = i + 1;
+                        var preIndexHash = hash.v3(data[i].request.host);
                         if (req.url.indexOf('GetSearchResults') > -1) {
-                            data[i].body[j].service_body_bigint = preIndex + data[i].body[j].service_body_bigint;
+                            data[i].body[j].service_body_bigint = prepare.addPreindex(preIndexHash, data[i].body[j].service_body_bigint);
                         } else {
-                            data[i].body[j].id = preIndex + data[i].body[j].id;
-                            data[i].body[j].parent_id = preIndex + data[i].body[j].parent_id;
+                            data[i].body[j].id = prepare.addPreindex(preIndexHash, data[i].body[j].id);
+                            data[i].body[j].parent_id = prepare.addPreindex(preIndexHash, data[i].body[j].parent_id);
                         }
 
                         combined.push(data[i].body[j]);
@@ -170,9 +177,10 @@ function getServers(settingToken) {
             }).then(responses => {
                 serversArray = []
                 for (r of responses) {
-                    if (r != null) {
+                    if (r != null && r.body != null) {
                         serversArray.push({
                             "rootURL": r.request.headers["x-bmlt-root"],
+                            "prefixId": hash.v3(r.request.host),
                             // support for BMLT roots pre - v2.8.16, no coverage areas so must be included
                             "coverageArea": (typeof r.body[0] == "object" ? r.body[0] : null)
                         })
@@ -194,8 +202,6 @@ function getServers(settingToken) {
 }
 
 function getData(url, isJson, headers, shouldCache) {
-    console.log("getData(shouldCache="+shouldCache+"): " + url)
-
     // TODO: simplify
     if (headers == null) {
         headers = { 'User-Agent': config.userAgent }
