@@ -37,13 +37,7 @@ function requestReceived(req, res) {
         res.end(settingToken + " cache purged.");
         return
     }
-
-    /*if (req.url.indexOf("&get_formats_only") > -1 || req.url.indexOf("&get_used_formats") > -1) {
-        res.writeHead(200);
-        res.end("{}")
-        return
-    }*/
-
+    
     getServers(settingToken).then(servers => {
         if (req.url == "" || req.url == "/") {
             res.writeHead(200);
@@ -65,6 +59,19 @@ function requestReceived(req, res) {
             }
 
             servers = filteredServers
+        } else if (req.url.indexOf("services[]") >= 0) {
+            var queryParams = urlUtils.parse(req.url, true).query
+            var services = /([0-9]*)_([0-9]*)/.exec(queryParams["services[]"])
+
+            var filteredServers = []
+            for (server of servers) {
+                if (server["prefixId"] == services[1]) {
+                    filteredServers.push(server)
+                    req.url = req.url.replace(services[1] + "_", "")
+                    servers = filteredServers
+                    break;
+                }
+            }
         }
         
         if (req.url.indexOf("/filter?") >= 0) {
@@ -96,6 +103,8 @@ function requestReceived(req, res) {
             if (req.url.indexOf('GetLangs.php') > -1 && req.url.indexOf('json') > -1) {
                 var data = config.languagesOverride;
                 return responselib.returnResponse(req, res, data);
+            } else if (req.url.indexOf("get_used_formats") > -1) {
+                return responselib.returnResponse(req, res, data[0].body);
             }
 
             // Clean up bad results from servers
