@@ -73,6 +73,10 @@ function requestReceived(req, res) {
                 }
             }
         }
+
+        if (req.url.indexOf("get_used_formats") > -1) {
+            req.url += "&recursive=1"
+        }
         
         if (req.url.indexOf("/filter?") >= 0) {
             res.writeHead(200);
@@ -104,7 +108,6 @@ function requestReceived(req, res) {
                 var data = config.languagesOverride;
                 return responselib.returnResponse(req, res, data);
             } else if (req.url.indexOf("get_used_formats") > -1) {
-                req.url += "&recursive=1";
                 return responselib.returnResponse(req, res, data[0].body);
             }
 
