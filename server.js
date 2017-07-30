@@ -104,6 +104,7 @@ function requestReceived(req, res) {
                 var data = config.languagesOverride;
                 return responselib.returnResponse(req, res, data);
             } else if (req.url.indexOf("get_used_formats") > -1) {
+                req.url += "&recursive=1";
                 return responselib.returnResponse(req, res, data[0].body);
             }
 
