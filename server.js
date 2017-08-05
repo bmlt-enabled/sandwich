@@ -61,20 +61,24 @@ function requestReceived(req, res) {
             servers = filteredServers
         } else if (req.url.indexOf("services[]") >= 0) {
             var queryParams = urlUtils.parse(req.url, true).query
-            var services = /([0-9]*)_([0-9]*)/.exec(queryParams["services[]"])
-
             var filteredServers = []
-            for (server of servers) {
-                if (server["prefixId"] == services[1]) {
-                    filteredServers.push(server)
-                    req.url = req.url.replace(services[1] + "_", "")
-                    servers = filteredServers
-                    break;
+            var servicesQS = queryParams["services[]"] instanceof Array ? queryParams["services[]"] : [queryParams["services[]"]]
+            for (service of servicesQS) {
+                var services = /([0-9]*)_([0-9]*)/.exec(service)
+
+                for (server of servers) {
+                    if (server["prefixId"] == services[1]) {
+                        filteredServers.push(server)
+                        req.url = req.url.replace(services[1] + "_", "")
+                        break;
+                    }
                 }
             }
+
+            servers = filteredServers
         }
 
-        if (req.url.indexOf("get_used_formats") > -1) {
+        if (req.url.indexOf("get_used_formats") > -1 || req.url.indexOf("services[]") > -1) {
             req.url += "&recursive=1"
         }
         
@@ -87,6 +91,11 @@ function requestReceived(req, res) {
         console.log("Querying " + servers.length + " servers.");    
 
         return servers.map(server => {
+            // TODO: needs to support the concept of urls specific to a root server because service Ids may overlap at this point.
+            /*
+                https://bmlt.ncregion-na.org/main_server//client_interface/json/?switcher=GetSearchResults&services[]=1&services[]=27&sort_keys=location_municipality,weekday_tinyint,start_time,meeting_name&get_used_formats&recursive=1
+                http://crna.org/main_server//client_interface/json/?switcher=GetSearchResults&services[]=1&services[]=27&sort_keys=location_municipality,weekday_tinyint,start_time,meeting_name&get_used_formats&recursive=1
+            */
             return getData(server["rootURL"] + req.url, (req.url.indexOf("json") > -1), null, config.cacheCheck(req.url));
         });
     }).catch(error => {
@@ -108,6 +117,7 @@ function requestReceived(req, res) {
                 var data = config.languagesOverride;
                 return responselib.returnResponse(req, res, data);
             } else if (req.url.indexOf("get_used_formats") > -1) {
+                // gotta handle this better combine these results (there will be some overlap for sure)
                 return responselib.returnResponse(req, res, data[0].body);
             }
 
