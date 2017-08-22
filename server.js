@@ -118,6 +118,7 @@ function requestReceived(req, res) {
     function executeQueries(serverQueries) {
         return Promise.all(serverQueries).then(data => {
             console.log("All requests received and returned.");
+            var queryParams = urlUtils.parse(req.url, true).query
 
             if (req.url.indexOf('GetLangs.php') > -1 && req.url.indexOf('json') > -1) {
                 var data = config.languagesOverride;
@@ -162,7 +163,9 @@ function requestReceived(req, res) {
                     combined = prepare.getSearchResults(combined, config.defaultSortKey)
                 }
 
-                combined = prepare.finalizeResults(combined);
+                if (queryParams["geo_width"] < 0) {
+                    combined = prepare.finalizeResults(combined, Math.abs(queryParams["geo_width"]))
+                }
             }
 
             if (req.url.indexOf('switcher=GetServerInfo') > -1) {

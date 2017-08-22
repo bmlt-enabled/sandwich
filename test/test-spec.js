@@ -80,6 +80,17 @@ describe('sandwich', () => {
       });
   });
 
+  it('GetSearchResults 30 items', (done) => {
+    rootServer
+      .get('/client_interface/json/?switcher=GetSearchResults&weekdays[]=1&weekdays[]=2&lat_val=35.542279819197&long_val=-78.64231134299&geo_width=-30')
+      .expect(200)
+      .expect('Content-Type', /json/)
+      .end((err, res) => {
+        expect(res.body.length).equals(30)
+        done()
+      });
+  });
+
   it('Root without slash', (done) => {
     rootServer
       .get('')

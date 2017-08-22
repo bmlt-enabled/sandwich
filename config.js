@@ -2,9 +2,7 @@ var fs = require("fs");
 var path = require('path');
 
 module.exports = {
-    distanceBufferMiles: 1,
     cacheTtlMs: 300000,
-    resultSize: 20,
     requestTimeoutMilliseconds: 5000,
     vdir: 'sandwich',
     defaultVdir: 'main_server',
