@@ -163,7 +163,7 @@ function requestReceived(req, res) {
                     combined = prepare.getSearchResults(combined, config.defaultSortKey)
                 }
 
-                if (queryParams["geo_width"] < 0) {
+                if (queryParams["geo_width"] < 0 || queryParams["geo_width_km"] < 0) {
                     combined = prepare.finalizeResults(combined, Math.abs(queryParams["geo_width"]))
                 }
             }
