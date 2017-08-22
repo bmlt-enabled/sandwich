@@ -40,7 +40,10 @@ function requestReceived(req, res) {
     
     getServers(settingToken).then(servers => {
         if (req.url == "" || req.url == "/") {
-            res.writeHead(200);
+            res.writeHead(200, {
+                "Content-Type": "application/json",
+                "Length": JSON.stringify(servers).length
+            });
             res.end(JSON.stringify(servers));
             return null
         } 
@@ -83,7 +86,10 @@ function requestReceived(req, res) {
         }
         
         if (req.url.indexOf("/filter?") >= 0) {
-            res.writeHead(200);
+            res.writeHead(200, {
+                "Content-Type": "application/json",
+                "Length": JSON.stringify(filteredServers).length
+            });
             res.end(JSON.stringify(filteredServers));
             return null;
         }

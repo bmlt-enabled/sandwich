@@ -43,7 +43,6 @@ describe('sandwich', () => {
       .expect(200)
       .expect('Content-Type', /xml/)
       .end((err, res) => {
-        
         done()
       });
   });
@@ -87,7 +86,7 @@ describe('sandwich', () => {
       .expect(200)
       .expect('Content-Type', /json/)
       .end((err, res) => {
-        expect(res.text.length).greaterThan(0)
+        expect(res.body.length).greaterThan(0)
         done()
       });
   });
@@ -98,7 +97,7 @@ describe('sandwich', () => {
       .expect(200)
       .expect('Content-Type', /json/)
       .end((err, res) => {
-        expect(res.text.length).greaterThan(0)
+        expect(res.body.length).greaterThan(0)
         done()
       });
   });
@@ -109,7 +108,7 @@ describe('sandwich', () => {
       .expect(200)
       .expect('Content-Type', /json/)
       .end((err, res) => {
-        expect(res.text.length).greaterThan(0)
+        expect(res.body.length).greaterThan(0)
         done()
       });
   });
@@ -120,7 +119,6 @@ describe('sandwich', () => {
       .expect(200)
       .expect('Content-Type', /json/)
       .end((err, res) => {
-        //console.log(res)
         expect(res.body.length).greaterThan(0)
         done()
       });
