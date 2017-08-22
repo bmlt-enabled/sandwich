@@ -9,9 +9,8 @@
     "murmurhash": "0.0.2",
     "request": "^2.69.0"
   },
-  "devDependencies": {},
   "scripts": {
-    "test": "test/tests.sh",
+    "test": "mocha test/test-spec.js -t 10000",
     "start": "node server.js"
   },
   "repository": {
@@ -23,5 +22,9 @@
   "bugs": {
     "url": "https://github.com/radius314/sandwich/issues"
   },
-  "homepage": "https://github.com/radius314/sandwich#readme"
+  "homepage": "https://github.com/radius314/sandwich#readme",
+  "devDependencies": {
+    "chai": "^3.2.0",
+    "supertest": "^3.0.0"
+  }
 }
