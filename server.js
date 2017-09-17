@@ -197,13 +197,13 @@ function getServers(settingToken) {
         } else if (settings.indexOf("json:") == 0) {
             getData(settings.replace("json:", ""), true).then(servers => {
                 for (server of servers.body) {
-                    serversArray.push(server["rootURL"]);
+                    serversArray.push(server);
                 }
 
                 return Promise.all(
                     serversArray.map(server => {
-                        return getData(server + "client_interface/json/?switcher=GetCoverageArea", 
-                            true, { "x-bmlt-root": server })
+                        return getData(server["rootURL"] + "client_interface/json/?switcher=GetCoverageArea", 
+                            true, { "x-bmlt-root": server["rootURL"] })
                     })
                 )
             }).then(responses => {
