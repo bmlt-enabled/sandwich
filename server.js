@@ -213,8 +213,7 @@ function getServers(settingToken) {
                         serversArray.push({
                             "rootURL": r.request.headers["x-bmlt-root"],
                             "prefixId": hash.v3(r.request.host),
-                            // support for BMLT roots pre - v2.8.16, no coverage areas so must be included
-                            "coverageArea": (typeof r.body[0] == "object" ? r.body[0] : null)
+                            "coverageArea": r.body[0]
                         })
                     } else {
                         console.log("No response from the other end, excluding it from the cache set.")
