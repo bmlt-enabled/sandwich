@@ -51,7 +51,7 @@ function requestReceived(req, res) {
 
             var filteredServers = []
             for (server of servers) {
-                // support for BMLT roots pre - v2.8.16, no coverage areas so must be included
+                // Checks also in case a root server might be down, and no coverage area can be found.
                 if (server["coverageArea"] == null || geolib.boxContains(server["coverageArea"], lat, lon)) {
                     filteredServers.push(server)
                 }
