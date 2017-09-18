@@ -7,7 +7,6 @@ var geolib = require('./lib/geo.js')
 var responselib = require('./lib/response.js')
 var urlUtils = require("url");
 var cache = require('memory-cache');
-var hash = require('murmurhash')
 var servers;
 
 http.createServer(requestReceived).listen(8888);
@@ -26,19 +25,16 @@ function requestReceived(req, res) {
         .substring(1)
         .replace("/" + config.vdir, "")
 
-    var settingToken = requestWithToken
-        .substring(0, requestWithToken.indexOf("/")) || requestWithToken
-
-    req.url = requestWithToken.replace(settingToken, "");
+    req.url = requestWithToken.replace("_", "");
 
     if (req.url == "/purge") {
-        cache.del(settingToken)
+        cache.del("_")
         res.writeHead(200);
-        res.end(settingToken + " cache purged.");
+        res.end("cache purged.");
         return
     }
     
-    getServers(settingToken).then(servers => {
+    getServers().then(servers => {
         if (req.url == "" || req.url == "/") {
             res.writeHead(200, {
                 "Content-Type": "application/json",
@@ -70,7 +66,7 @@ function requestReceived(req, res) {
                 var services = /([0-9]*)_([0-9]*)/.exec(service)
 
                 for (server of servers) {
-                    if (server["prefixId"] == services[1]) {
+                    if (server["serverId"] == services[1]) {
                         filteredServers.push(server)
                         req.url = req.url.replace(services[1] + "_", "")
                         break;
@@ -102,7 +98,10 @@ function requestReceived(req, res) {
                 https://bmlt.ncregion-na.org/main_server//client_interface/json/?switcher=GetSearchResults&services[]=1&services[]=27&sort_keys=location_municipality,weekday_tinyint,start_time,meeting_name&get_used_formats&recursive=1
                 http://crna.org/main_server//client_interface/json/?switcher=GetSearchResults&services[]=1&services[]=27&sort_keys=location_municipality,weekday_tinyint,start_time,meeting_name&get_used_formats&recursive=1
             */
-            return getData(server["rootURL"] + req.url, (req.url.indexOf("json") > -1), null, config.cacheCheck(req.url));
+            return getData(server["rootURL"] + req.url, 
+                (req.url.indexOf("json") > -1), 
+                { "x-bmlt-root": server["rootURL"], "x-bmlt-root-server-id": getServer(server["rootURL"].serverId) },
+                 config.cacheCheck(req.url));
         });
     }).catch(error => {
         console.error(error);
@@ -139,12 +138,12 @@ function requestReceived(req, res) {
                 // TODO: this is a weird bug in the BMLT where it return text/html content-type headers
                 if (data[i].headers['content-type'].indexOf("application/xml") < 0) {
                     for (var j = 0; j < data[i].body.length; j++) {
-                        var preIndexHash = hash.v3(data[i].request.host);
+                        var serverId = getServer(data[i].request.headers["x-bmlt-root"]).serverId;
                         if (req.url.indexOf('GetSearchResults') > -1) {
-                            data[i].body[j].service_body_bigint = prepare.addPreindex(preIndexHash, data[i].body[j].service_body_bigint);
+                            data[i].body[j].service_body_bigint = prepare.addServerId(serverId, data[i].body[j].service_body_bigint);
                         } else {
-                            data[i].body[j].id = prepare.addPreindex(preIndexHash, data[i].body[j].id);
-                            data[i].body[j].parent_id = prepare.addPreindex(preIndexHash, data[i].body[j].parent_id);
+                            data[i].body[j].id = prepare.addServerId(serverId, data[i].body[j].id);
+                            data[i].body[j].parent_id = prepare.addServerId(serverId, data[i].body[j].parent_id);
                         }
 
                         combined.push(data[i].body[j]);
@@ -185,14 +184,23 @@ function requestReceived(req, res) {
     }
 }
 
-function getServers(settingToken) {
-    return new Promise((resolve, reject) => {
-        var settings = process.env["BMLT_ROOT_SERVERS" + (settingToken == "_" ? "" : "_" + settingToken)]
+function getServer(rootURL) {
+    var serversArray = cache.get('_') || []
+    if (serversArray.length == 0) return {};
+    for (server of serversArray) {
+        if (server["rootURL"] == rootURL) {
+            return server;
+        }
+    }
+}
 
-        var serversArray = cache.get(settingToken) || []
+function getServers() {
+    return new Promise((resolve, reject) => {
+        var settings = process.env["BMLT_ROOT_SERVERS"]
+        var serversArray = cache.get("_") || []
 
         if (serversArray.length > 0) {
-            console.log(settingToken + " cache hit")
+            console.log("cache hit")
             resolve(serversArray)
         } else if (settings.indexOf("json:") == 0) {
             getData(settings.replace("json:", ""), true).then(servers => {
@@ -203,7 +211,7 @@ function getServers(settingToken) {
                 return Promise.all(
                     serversArray.map(server => {
                         return getData(server["rootURL"] + "client_interface/json/?switcher=GetCoverageArea", 
-                            true, { "x-bmlt-root": server["rootURL"] })
+                            true, { "x-bmlt-root": server["rootURL"], "x-bmlt-root-server-id": server["id"] })
                     })
                 )
             }).then(responses => {
@@ -212,14 +220,14 @@ function getServers(settingToken) {
                     if (r != null && r.body != null) {
                         serversArray.push({
                             "rootURL": r.request.headers["x-bmlt-root"],
-                            "prefixId": hash.v3(r.request.host),
+                            "serverId": r.request.headers["x-bmlt-root-server-id"],
                             "coverageArea": r.body[0]
                         })
                     } else {
                         console.log("No response from the other end, excluding it from the cache set.")
                     }
                 }
-                cache.put(settingToken, serversArray, config.cacheTtlMs)
+                cache.put("_", serversArray, config.cacheTtlMs)
                 resolve(serversArray);
             }).catch(error => {
                 reject(error);
