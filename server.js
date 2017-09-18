@@ -63,12 +63,12 @@ function requestReceived(req, res) {
             var filteredServers = []
             var servicesQS = queryParams["services[]"] instanceof Array ? queryParams["services[]"] : [queryParams["services[]"]]
             for (service of servicesQS) {
-                var services = /([0-9]*)_([0-9]*)/.exec(service)
+                var services = /([0-9]{3})([0]{3})([0-9]*)/g.exec(service)
 
                 for (server of servers) {
                     if (server["serverId"] == services[1]) {
                         filteredServers.push(server)
-                        req.url = req.url.replace(services[1] + "_", "")
+                        req.url = req.url.replace(services[1] + "000", "")
                         break;
                     }
                 }
