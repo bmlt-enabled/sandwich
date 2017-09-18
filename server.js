@@ -58,10 +58,16 @@ function requestReceived(req, res) {
             }
 
             servers = filteredServers
-        } else if (req.url.indexOf("services[]") >= 0) {
+        } else if (req.url.indexOf("services") >= 0) {
             var queryParams = urlUtils.parse(req.url, true).query
             var filteredServers = []
-            var servicesQS = queryParams["services[]"] instanceof Array ? queryParams["services[]"] : [queryParams["services[]"]]
+            var servicesQS = []
+            if (req.url.indexOf("services[]") >= 0) {
+                servicesQS = queryParams["services[]"] instanceof Array ? queryParams["services[]"] : [queryParams["services[]"]]
+            } else {
+                servicesQS = queryParams["services"] instanceof Array ? queryParams["services"] : [queryParams["services"]]
+            }
+            
             for (service of servicesQS) {
                 var services = /([0-9]{3})([0]{3})([0-9]*)/g.exec(service)
 
@@ -77,7 +83,7 @@ function requestReceived(req, res) {
             servers = filteredServers
         }
 
-        if (req.url.indexOf("get_used_formats") > -1 || req.url.indexOf("services[]") > -1) {
+        if (req.url.indexOf("get_used_formats") > -1 || req.url.indexOf("services") > -1) {
             req.url += "&recursive=1"
         }
         
