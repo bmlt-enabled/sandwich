@@ -147,7 +147,7 @@ function requestReceived(req, res) {
                         var serverId = getServer(data[i].request.headers["x-bmlt-root"]).serverId;
                         if (req.url.indexOf('GetSearchResults') > -1) {
                             data[i].body[j].service_body_bigint = prepare.addServerId(serverId, data[i].body[j].service_body_bigint);
-                        } else {
+                        } else if (data[i].body[j].id != null && data[i].body[j].parent_id != null) {
                             data[i].body[j].id = prepare.addServerId(serverId, data[i].body[j].id);
                             data[i].body[j].parent_id = prepare.addServerId(serverId, data[i].body[j].parent_id);
                         }
