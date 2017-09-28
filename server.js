@@ -17,7 +17,7 @@ function requestReceived(req, res) {
     if ((req.url.indexOf(config.vdir) < 0)
         || req.url.indexOf('favicon') > -1) {
         res.writeHead(404);
-        res.end("404");
+        res.end("Not found.");
         return
     }
 
@@ -34,14 +34,10 @@ function requestReceived(req, res) {
         return
     }
     
-    getServers().then(servers => {
-        if (req.url == "" || req.url == "/") {
-            res.writeHead(200, {
-                "Content-Type": "application/json",
-                "Length": JSON.stringify(servers).length
-            });
-            res.end(JSON.stringify(servers));
-            return null
+    getServers(!!urlUtils.parse(req.url, true).query["bypassCache"]).then(servers => {
+        if (req.url.replace("?bypassCache=true", "") == "" || req.url.replace("?bypassCache=true", "") == "/") {
+            responselib.returnJSONResponse(res, servers);
+            return null;
         } 
         
         if (req.url.indexOf("lat_val") >= 0 && req.url.indexOf("long_val") >= 0) {
@@ -88,11 +84,12 @@ function requestReceived(req, res) {
         }
         
         if (req.url.indexOf("/filter?") >= 0) {
-            res.writeHead(200, {
-                "Content-Type": "application/json",
-                "Length": JSON.stringify(filteredServers).length
-            });
-            res.end(JSON.stringify(filteredServers));
+            responselib.returnJSONResponse(res, filteredServers);
+            return null;
+        }
+
+        if (req.url.indexOf("/cache") >= 0) {
+            responselib.returnJSONResponse(res, cache.keys());
             return null;
         }
 
@@ -142,7 +139,7 @@ function requestReceived(req, res) {
             var combined = [];
             for (var i = 0; i < data.length; i++) {
                 // TODO: this is a weird bug in the BMLT where it return text/html content-type headers
-                if (data[i].headers['content-type'].indexOf("application/xml") < 0) {
+                if (data[i].headers ['content-type'].indexOf("application/xml") < 0) {
                     for (var j = 0; j < data[i].body.length; j++) {
                         var serverId = getServer(data[i].request.headers["x-bmlt-root"]).serverId;
                         if (req.url.indexOf('GetSearchResults') > -1) {
@@ -200,16 +197,16 @@ function getServer(rootURL) {
     }
 }
 
-function getServers() {
+function getServers(bypassCache) {
     return new Promise((resolve, reject) => {
         var settings = process.env["BMLT_ROOT_SERVERS"]
-        var serversArray = cache.get("_") || []
+        var serversArray = bypassCache ? [] : cache.get("_") || []
 
         if (serversArray.length > 0) {
             console.log("cache hit")
             resolve(serversArray)
         } else if (settings.indexOf("json:") == 0) {
-            getData(settings.replace("json:", ""), true).then(servers => {
+            getData(settings.replace("json:", ""), true, null, !bypassCache).then(servers => {
                 for (server of servers.body) {
                     serversArray.push(server);
                 }
@@ -223,17 +220,14 @@ function getServers() {
             }).then(responses => {
                 serversArray = []
                 for (r of responses) {
-                    if (r != null && r.body != null) {
-                        serversArray.push({
-                            "rootURL": r.request.headers["x-bmlt-root"],
-                            "serverId": r.request.headers["x-bmlt-root-server-id"],
-                            "coverageArea": r.body[0]
-                        })
-                    } else {
-                        console.log("No response from the other end, excluding it from the cache set.")
-                    }
-                }
-                cache.put("_", serversArray, config.cacheTtlMs)
+                    serversArray.push({
+                        "rootURL": r.request.headers["x-bmlt-root"],
+                        "serverId": r.request.headers["x-bmlt-root-server-id"],
+                        "status": (r != null && r.body != null),
+                        "coverageArea": (r != null && r.body != null) ? r.body[0] : null
+                    })
+                 }
+                if (!bypassCache) cache.put("_", serversArray, config.cacheTtlMs)
                 resolve(serversArray);
             }).catch(error => {
                 reject(error);
@@ -268,8 +262,7 @@ function getData(url, isJson, headers, shouldCache) {
             timeout: config.requestTimeoutMilliseconds
         }, (error, response, body) => {
             if (error) {
-                console.error("\r\n" + url + ": " + error);
-                resolve(response);
+                resolve({request: {headers: headers}});
             } else {
                 if (body != null) {
                     console.log("body array length: " + body.length + ", url: " + url)
