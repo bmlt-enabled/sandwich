@@ -4,6 +4,7 @@ var request = require("request");
 var config = require('./config.js');
 var prepare = require('./lib/prepare.js');
 var geolib = require('./lib/geo.js')
+var utils = require("./lib/utils.js")
 var responselib = require('./lib/response.js')
 var urlUtils = require("url");
 var cache = require('memory-cache');
@@ -39,60 +40,61 @@ function requestReceived(req, res) {
             responselib.returnJSONResponse(res, servers);
             return null;
         } 
-        
-        if (req.url.indexOf("lat_val") >= 0 && req.url.indexOf("long_val") >= 0) {
-            var queryParams = urlUtils.parse(req.url, true).query
-            var lat = queryParams["lat_val"]
-            var lon = queryParams["long_val"]
-
-            var filteredServers = []
-            for (server of servers) {
-                // Checks also in case a root server might be down, and no coverage area can be found.
-                if (server["coverageArea"] == null || geolib.boxContains(server["coverageArea"], lat, lon)) {
-                    filteredServers.push(server)
-                }
-            }
-
-            servers = filteredServers
-        } else if (req.url.indexOf("services") >= 0) {
-            var queryParams = urlUtils.parse(req.url, true).query
-            var filteredServers = []
-            var servicesQS = []
-            if (req.url.indexOf("services[]") >= 0) {
-                servicesQS = queryParams["services[]"] instanceof Array ? queryParams["services[]"] : [queryParams["services[]"]]
-            } else {
-                servicesQS = queryParams["services"] instanceof Array ? queryParams["services"] : [queryParams["services"]]
-            }
-            
-            for (service of servicesQS) {
-                var services = /([0-9]{3})([0]{3})([0-9]*)/g.exec(service)
-
-                for (server of servers) {
-                    if (server["serverId"] == services[1]) {
-                        filteredServers.push(server)
-                        req.url = req.url.replace(services[1] + "000", "")
-                        break;
-                    }
-                }
-            }
-
-            servers = filteredServers
-        }
-
-        if (req.url.indexOf("get_used_formats") > -1 || req.url.indexOf("services") > -1) {
-            req.url += "&recursive=1"
-        }
-        
-        if (req.url.indexOf("/filter?") >= 0) {
-            responselib.returnJSONResponse(res, filteredServers);
-            return null;
-        }
 
         if (req.url.indexOf("/cache") >= 0) {
             responselib.returnJSONResponse(res, cache.keys());
             return null;
         }
 
+        if ((req.url.indexOf("get_used_formats") > -1 || req.url.indexOf("services") > -1) && req.url.indexOf("recursive") < 0) {
+            req.url += "&recursive=1"
+        }
+        
+        var filteredServers = []
+        if (req.url.indexOf("lat_val") >= 0 && req.url.indexOf("long_val") >= 0) {
+            var queryParams = urlUtils.parse(req.url, true).query
+            var lat = queryParams["lat_val"]
+            var lon = queryParams["long_val"]
+
+
+            for (server of servers) {
+                // Checks also in case a root server might be down, and no coverage area can be found.
+                if (server["coverageArea"] == null || geolib.boxContains(server["coverageArea"], lat, lon)) {
+                    filteredServers.push({"root": server, "url" : req.url})
+                }
+            }
+        } else if (req.url.indexOf("services") >= 0) {
+            var queryParams = urlUtils.parse(req.url, true).query
+            var pathname = urlUtils.parse(req.url, true).pathname
+            var filteredServers = []
+            var servicesParameterKey = req.url.indexOf("services[]") >= 0 ? "services[]" : "services"
+            var servicesQS = queryParams[servicesParameterKey] instanceof Array ? queryParams[servicesParameterKey] : [queryParams[servicesParameterKey]]
+            
+            for (service of servicesQS) {
+                var services = /([0-9]{3})([0]{3})([0-9]*)/g.exec(service)
+
+                for (server of servers) {
+                    if (server["serverId"] == services[1]) {
+                        delete queryParams[servicesParameterKey]
+                        req.url = pathname + utils.convertMapToQueryString(queryParams) + servicesParameterKey + "=" + services[3]
+                        filteredServers.push({"root": server, "url" : req.url})
+                        //req.url = req.url.replace(services[1] + "000", "")
+                        break;
+                    }
+                }
+            }
+        } else {
+            for (server of servers) {
+                filteredServers.push({"root": server, "url" : req.url})
+            }
+        }
+
+        if (req.url.indexOf("/filter?") >= 0) {
+            responselib.returnJSONResponse(res, filteredServers);
+            return null;
+        }
+
+        servers = filteredServers
         console.log("Querying " + servers.length + " servers.");    
 
         return servers.map(server => {
@@ -101,10 +103,10 @@ function requestReceived(req, res) {
                 https://bmlt.ncregion-na.org/main_server//client_interface/json/?switcher=GetSearchResults&services[]=1&services[]=27&sort_keys=location_municipality,weekday_tinyint,start_time,meeting_name&get_used_formats&recursive=1
                 http://crna.org/main_server//client_interface/json/?switcher=GetSearchResults&services[]=1&services[]=27&sort_keys=location_municipality,weekday_tinyint,start_time,meeting_name&get_used_formats&recursive=1
             */
-            return getData(server["rootURL"] + req.url, 
-                (req.url.indexOf("json") > -1), 
-                { "x-bmlt-root": server["rootURL"], "x-bmlt-root-server-id": getServer(server["rootURL"].serverId) },
-                 config.cacheCheck(req.url));
+            return getData(server.root["rootURL"] + server["url"], 
+                (server["url"].indexOf("json") > -1), 
+                { "x-bmlt-root": server.root["rootURL"], "x-bmlt-root-server-id": getServer(server.root["rootURL"].serverId) },
+                 config.cacheCheck(server["url"]));
         });
     }).catch(error => {
         console.error(error);
@@ -125,9 +127,6 @@ function requestReceived(req, res) {
             if (req.url.indexOf('GetLangs.php') > -1 && req.url.indexOf('json') > -1) {
                 var data = config.languagesOverride;
                 return responselib.returnResponse(req, res, data);
-            } else if (req.url.indexOf("get_used_formats") > -1) {
-                // gotta handle this better combine these results (there will be some overlap for sure)
-                return responselib.returnResponse(req, res, data[0].body);
             }
 
             // Clean up bad results from servers
@@ -137,23 +136,38 @@ function requestReceived(req, res) {
             }
 
             var combined = [];
+            var meetings = [];
+            var formats = [];
             for (var i = 0; i < data.length; i++) {
                 // TODO: this is a weird bug in the BMLT where it return text/html content-type headers
-                if (data[i].headers ['content-type'].indexOf("application/xml") < 0) {
-                    for (var j = 0; j < data[i].body.length; j++) {
+                if (data[i].headers != null && data[i].headers['content-type'].indexOf("application/xml") < 0) {
+                    for (var j = 0; j < utils.getMeetingData(req, data, i).length; j++) {
                         var serverId = getServer(data[i].request.headers["x-bmlt-root"]).serverId;
                         if (req.url.indexOf('GetSearchResults') > -1) {
-                            data[i].body[j].service_body_bigint = prepare.addServerId(serverId, data[i].body[j].service_body_bigint);
-                        } else if (data[i].body[j].id != null && data[i].body[j].parent_id != null) {
-                            data[i].body[j].id = prepare.addServerId(serverId, data[i].body[j].id);
-                            data[i].body[j].parent_id = prepare.addServerId(serverId, data[i].body[j].parent_id);
+                            utils.getMeetingDataPoint(req, data, i, j).service_body_bigint = prepare.addServerId(serverId, utils.getMeetingDataPoint(req, data, i, j).service_body_bigint);
+                        } else if (utils.getMeetingDataPoint(req, data, i, j).id != null && utils.getMeetingDataPoint(req, data, i, j).parent_id != null) {
+                            utils.getMeetingDataPoint(req, data, i, j).id = prepare.addServerId(serverId, utils.getMeetingDataPoint(req, data, i, j).id);
+                            utils.getMeetingDataPoint(req, data, i, j).parent_id = prepare.addServerId(serverId, utils.getMeetingDataPoint(req, data, i, j).parent_id);
                         }
 
-                        combined.push(data[i].body[j]);
+                        var meetingDataPoint = utils.getMeetingDataPoint(req, data, i, j)
+                        req.url.indexOf("get_used_formats") > -1 ? meetings.push(meetingDataPoint) : combined.push(meetingDataPoint)
                     }
-                } else {
+                } else {  // xml response body
                     combined.push(data[i].body);
                 }
+            }
+
+            if (req.url.indexOf("get_used_formats") > -1) { 
+                for (var i = 0; i < data.length; i++) {
+                    for (var j = 0; j < utils.getFormatData(req, data, i).length; j++) {
+                        var serverId = getServer(data[i].request.headers["x-bmlt-root"]).serverId;
+                        utils.getFormatDataPoint(req, data, i, j).id = prepare.addServerId(serverId, utils.getFormatDataPoint(req, data, i, j).id);
+                        formats.push(utils.getFormatDataPoint(req, data, i, j))
+                    }
+                }
+
+                combined = { "meetings" : meetings , "formats" : formats };
             }
 
             // Sort search results
@@ -161,7 +175,7 @@ function requestReceived(req, res) {
                 if (req.url.indexOf('sort_keys') > -1) {
                     var sortKeys = urlUtils.parse(req.url, true).query.sort_keys
                     combined = prepare.getSearchResults(combined, sortKeys)
-                } else {
+                } else if (req.url.indexOf('get_used_formats') < 0) {
                     combined = prepare.getSearchResults(combined, config.defaultSortKey)
                 }
 
