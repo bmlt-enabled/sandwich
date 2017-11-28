@@ -17,7 +17,7 @@ module.exports = {
     ssl: {
         key: fs.readFileSync(path.join(__dirname, 'certs/privkey.pem')),
         cert: fs.readFileSync(path.join(__dirname, 'certs/cert.pem')),
-        ca: fs.readFileSync(path.join(__dirname, 'certs/cert.pem'))
+        ca: fs.readFileSync(path.join(__dirname, 'certs/chain.pem'))
     },
     cachedEndpoints: [
         "switcher=GetServerInfo",
