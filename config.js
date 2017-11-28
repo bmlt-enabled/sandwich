@@ -16,7 +16,8 @@ module.exports = {
     languagesOverride: {"languages":[{"key":"en","name":"English","default":true},{"key":"de","name":"German"},{"key":"es","name":"Spanish"},{"key":"fr","name":"French"},{"key":"it","name":"Italian"},{"key":"sv","name":"Svenska"}]},
     ssl: {
         key: fs.readFileSync(path.join(__dirname, 'certs/privkey.pem')),
-        cert: fs.readFileSync(path.join(__dirname, 'certs/cert.pem'))
+        cert: fs.readFileSync(path.join(__dirname, 'certs/cert.pem')),
+        ca: fs.readFileSync(path.join(__dirname, 'certs/cert.pem'))
     },
     cachedEndpoints: [
         "switcher=GetServerInfo",

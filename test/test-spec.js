@@ -69,6 +69,17 @@ describe('sandwich', () => {
       });
   });
 
+  it('GetSearchResults 10 items', (done) => {
+    rootServer
+      .get('/client_interface/json/?switcher=GetSearchResults&weekdays[]=1&weekdays[]=2&lat_val=35.542279819197&long_val=-78.64231134299&geo_width=-10')
+      .expect(200)
+      .expect('Content-Type', /json/)
+      .end((err, res) => {
+        expect(res.body.length).equals(10)
+        done()
+      });
+  });
+
   it('GetSearchResults 20 items', (done) => {
     rootServer
       .get('/client_interface/json/?switcher=GetSearchResults&weekdays[]=1&weekdays[]=2&lat_val=35.542279819197&long_val=-78.64231134299&geo_width=-20')
@@ -76,17 +87,6 @@ describe('sandwich', () => {
       .expect('Content-Type', /json/)
       .end((err, res) => {
         expect(res.body.length).equals(20)
-        done()
-      });
-  });
-
-  it('GetSearchResults 30 items', (done) => {
-    rootServer
-      .get('/client_interface/json/?switcher=GetSearchResults&weekdays[]=1&weekdays[]=2&lat_val=35.542279819197&long_val=-78.64231134299&geo_width=-30')
-      .expect(200)
-      .expect('Content-Type', /json/)
-      .end((err, res) => {
-        expect(res.body.length).equals(30)
         done()
       });
   });
@@ -127,6 +127,28 @@ describe('sandwich', () => {
   it('GetSearchResults with specific fields', (done) => {
     rootServer
       .get('/client_interface/json/?switcher=GetSearchResults&data_field_key=weekday_tinyint,start_time,service_body_bigint,id_bigint,meeting_name,location_text&sort_keys=meeting_name,service_body_bigint,weekday_tinyint,start_time')
+      .expect(200)
+      .expect('Content-Type', /json/)
+      .end((err, res) => {
+        expect(res.body.length).greaterThan(0)
+        done()
+      });
+  });
+
+  it('Services search without formats', (done) => {
+    rootServer
+      .get('/client_interface/json/?switcher=GetSearchResults&recursive=1&get_used_formats=1&services=1000001019')
+      .expect(200)
+      .expect('Content-Type', /json/)
+      .end((err, res) => {
+        expect(JSON.stringify(res.body).length).greaterThan(0)
+        done()
+      });
+  });
+
+  it('Services search with formats', (done) => {
+    rootServer
+      .get('/client_interface/json/?switcher=GetSearchResults&recursive=1&services=1000001019')
       .expect(200)
       .expect('Content-Type', /json/)
       .end((err, res) => {

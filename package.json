@@ -5,11 +5,11 @@
   "main": "server.js",
   "dependencies": {
     "geolib": "^2.0.22",
-    "memory-cache": "^0.1.6",
+    "memory-cache": "^0.2.0",
     "request": "^2.69.0"
   },
   "scripts": {
-    "test": "mocha test/test-spec.js -t 10000",
+    "test": "mocha test/test-spec.js -t 20000",
     "start": "node server.js"
   },
   "repository": {
