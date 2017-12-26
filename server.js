@@ -176,7 +176,11 @@ function requestReceived(req, res) {
             if (req.url.indexOf('GetSearchResults') > -1) {
                 if (req.url.indexOf('sort_keys') > -1) {
                     var sortKeys = urlUtils.parse(req.url, true).query.sort_keys
-                    combined = req.url.indexOf('get_used_formats') > -1 ? prepare.getSearchResults(combined["meetings"], sortKeys) : prepare.getSearchResults(combined, sortKeys)          
+                    if (req.url.indexOf('get_used_formats') > -1) {
+                        combined["meetings"] = prepare.getSearchResults(combined["meetings"], sortKeys)
+                    } else {
+                        combined = prepare.getSearchResults(combined, sortKeys)
+                    }
                 } else if (req.url.indexOf('get_used_formats') < 0) {
                     combined = prepare.getSearchResults(combined, config.defaultSortKey)
                 }
