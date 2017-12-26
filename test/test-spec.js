@@ -10,7 +10,7 @@ describe('sandwich', () => {
       .expect(200)
       .expect('Content-Type', /json/)
       .end((err, res) => {
-        expect(res.body.version).to.equal("4.0.0")
+        expect(res.body[0].version).to.equal("4.0.0")
         done()
       });
   });
