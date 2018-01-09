@@ -3,6 +3,23 @@ var supertest = require('supertest')
 var expect = chai.expect;
 var rootServer = supertest("http://localhost:8888/_/sandwich")
 
+function checkForAtLeastOneOfEachDay(resultSet) {
+  var daysFound = [false, false, false, false, false, false, false]
+  var notMissingAnyDays = true
+  for (item of resultSet) {
+      daysFound[resultSet["weekday_tinyint"]] = true
+  }
+
+  for (day in daysFound) {
+    if (!day) {
+      notMissingAnyDays = false
+      break;
+    }
+  }
+
+  return notMissingAnyDays;
+}
+
 describe('sandwich', () => {
   it('GetServerInfo', (done) => {
     rootServer
@@ -75,7 +92,7 @@ describe('sandwich', () => {
       .expect(200)
       .expect('Content-Type', /json/)
       .end((err, res) => {
-        expect(res.body.length).equals(10)
+        expect(res.body.length).greaterThan(9)
         done()
       });
   });
@@ -86,7 +103,29 @@ describe('sandwich', () => {
       .expect(200)
       .expect('Content-Type', /json/)
       .end((err, res) => {
-        expect(res.body.length).equals(20)
+        expect(res.body.length).greaterThan(19)
+        done()
+      });
+  });
+
+  it('Auto-Radius at least one day a week (10 items)', (done) => {
+    rootServer
+      .get('/client_interface/json/?switcher=GetSearchResults&lat_val=35.542279819197&long_val=-78.64231134299&geo_width=-10&sort_keys=weekday_tinyint')
+      .expect(200)
+      .expect('Content-Type', /json/)
+      .end((err, res) => {
+        expect(checkForAtLeastOneOfEachDay(res.body)).equals(true)
+        done()
+      });
+  });
+
+  it('Auto-Radius at least one day a week (50 items)', (done) => {
+    rootServer
+      .get('/client_interface/json/?switcher=GetSearchResults&lat_val=35.542279819197&long_val=-78.64231134299&geo_width=-50&sort_keys=weekday_tinyint')
+      .expect(200)
+      .expect('Content-Type', /json/)
+      .end((err, res) => {
+        expect(checkForAtLeastOneOfEachDay(res.body)).equals(true)
         done()
       });
   });
