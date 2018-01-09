@@ -186,7 +186,11 @@ function requestReceived(req, res) {
                 }
 
                 if (queryParams["geo_width"] < 0 || queryParams["geo_width_km"] < 0) {
-                    combined = prepare.finalizeResults(combined, Math.abs(queryParams["geo_width"]))
+                    combined = prepare.finalizeResults(
+                        combined, 
+                        Math.abs(queryParams["geo_width"]), 
+                        req.url.indexOf('sort_keys') > -1 ? sortKeys : config.defaultSortKey
+                    ) 
                 }
             }
 
