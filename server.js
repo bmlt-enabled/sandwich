@@ -95,7 +95,7 @@ function requestReceived(req, res) {
         }
 
         servers = filteredServers
-        console.log("Querying " + servers.length + " servers.");    
+        console.log("Querying " + (servers.length - 1) + " servers.");    
 
         return servers.map(server => {
             // TODO: needs to support the concept of urls specific to a root server because service Ids may overlap at this point.
