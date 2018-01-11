@@ -10,7 +10,7 @@ var urlUtils = require("url");
 var cache = require('memory-cache');
 var servers;
 
-http.createServer(requestReceived).listen(8888);
+http.createServer(requestReceived).listen(8888, "0.0.0.0");
 https.createServer(config.ssl, requestReceived).listen(8889);
 
 function requestReceived(req, res) {
@@ -189,7 +189,8 @@ function requestReceived(req, res) {
                     combined = prepare.finalizeResults(
                         combined, 
                         Math.abs(queryParams["geo_width"]), 
-                        req.url.indexOf('sort_keys') > -1 ? sortKeys : config.defaultSortKey
+                        req.url.indexOf('sort_keys') > -1 ? sortKeys : config.defaultSortKey,
+                        urlUtils.parse(req.url, true).query["weekdays[]"]
                     ) 
                 }
             }

@@ -86,28 +86,6 @@ describe('sandwich', () => {
       });
   });
 
-  it('GetSearchResults 10 items', (done) => {
-    rootServer
-      .get('/client_interface/json/?switcher=GetSearchResults&weekdays[]=1&weekdays[]=2&lat_val=35.542279819197&long_val=-78.64231134299&geo_width=-10')
-      .expect(200)
-      .expect('Content-Type', /json/)
-      .end((err, res) => {
-        expect(res.body.length).greaterThan(9)
-        done()
-      });
-  });
-
-  it('GetSearchResults 20 items', (done) => {
-    rootServer
-      .get('/client_interface/json/?switcher=GetSearchResults&weekdays[]=1&weekdays[]=2&lat_val=35.542279819197&long_val=-78.64231134299&geo_width=-20')
-      .expect(200)
-      .expect('Content-Type', /json/)
-      .end((err, res) => {
-        expect(res.body.length).greaterThan(19)
-        done()
-      });
-  });
-
   it('Auto-Radius at least one day a week (10 items)', (done) => {
     rootServer
       .get('/client_interface/json/?switcher=GetSearchResults&lat_val=35.542279819197&long_val=-78.64231134299&geo_width=-10&sort_keys=weekday_tinyint')
@@ -126,6 +104,28 @@ describe('sandwich', () => {
       .expect('Content-Type', /json/)
       .end((err, res) => {
         expect(checkForAtLeastOneOfEachDay(res.body)).equals(true)
+        done()
+      });
+  });
+
+  it('Auto-Radius with specific day still returns 20 items', (done) => {
+    rootServer
+      .get('/client_interface/json/?switcher=GetSearchResults&weekdays[]=1&lat_val=35.541741900696&long_val=-78.642678483024&geo_width=-20')
+      .expect(200)
+      .expect('Content-Type', /json/)
+      .end((err, res) => {
+        expect(res.body.length).greaterThan(19)
+        done()
+      });
+  });
+
+  it('Auto-Radius with specific days still returns 20 items', (done) => {
+    rootServer
+      .get('/client_interface/json/?switcher=GetSearchResults&weekdays[]=5&weekdays[]=4&lat_val=35.541741900696&long_val=-78.642678483024&geo_width=-20')
+      .expect(200)
+      .expect('Content-Type', /json/)
+      .end((err, res) => {
+        expect(res.body.length).greaterThan(19)
         done()
       });
   });
