@@ -12,4 +12,4 @@ debug:
 test:
 	npm test
 
-deploy: build push
+deploy: test build push
