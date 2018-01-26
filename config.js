@@ -26,6 +26,7 @@ module.exports = {
         "GetLangs.php",
         "GetServiceBodies.php"
     ],
+    debug: process.env["DEBUG"] || false,
     cacheCheck: function(url) {
         for (ce of this.cachedEndpoints) {
             if (url.indexOf(ce) >= 0) {

@@ -13,8 +13,14 @@ var servers;
 http.createServer(requestReceived).listen(8888, "0.0.0.0");
 https.createServer(config.ssl, requestReceived).listen(8889);
 
+function log(message) {
+    if (config.debug) { 
+        console.log(message);
+    }
+}
+
 function requestReceived(req, res) {
-    console.log('request received: ' + req.url);
+    log('request received: ' + req.url);
     if ((req.url.indexOf(config.vdir) < 0)
         || req.url.indexOf('favicon') > -1) {
         res.writeHead(404);
@@ -35,7 +41,7 @@ function requestReceived(req, res) {
         return
     }
     
-    getServers(!!urlUtils.parse(req.url, true).query["bypassCache"]).then(servers => {
+    getServers(!urlUtils.parse(req.url, true).query["bypassCache"]).then(servers => {
         if (req.url.replace("?bypassCache=true", "") == "" || req.url.replace("?bypassCache=true", "") == "/") {
             responselib.returnJSONResponse(res, servers);
             return null;
@@ -95,7 +101,7 @@ function requestReceived(req, res) {
         }
 
         servers = filteredServers
-        console.log("Querying " + (servers.length - 1) + " servers.");    
+        log("Querying " + (servers.length - 1) + " servers.");    
 
         return servers.map(server => {
             // TODO: needs to support the concept of urls specific to a root server because service Ids may overlap at this point.
@@ -121,7 +127,7 @@ function requestReceived(req, res) {
 
     function executeQueries(serverQueries) {
         return Promise.all(serverQueries).then(data => {
-            console.log("All requests received and returned.");
+            log("All requests received and returned.");
             var queryParams = urlUtils.parse(req.url, true).query
 
             if (req.url.indexOf('GetLangs.php') > -1 && req.url.indexOf('json') > -1) {
@@ -228,7 +234,7 @@ function getServers(bypassCache) {
         var serversArray = bypassCache ? [] : cache.get("_") || []
 
         if (serversArray.length > 0) {
-            console.log("cache hit")
+            log("cache hit")
             resolve(serversArray)
         } else if (settings.indexOf("json:") == 0) {
             getData(settings.replace("json:", ""), true, null, !bypassCache).then(servers => {
@@ -275,7 +281,7 @@ function getData(url, isJson, headers, shouldCache) {
 
     return new Promise((resolve, reject) => {
         if (shouldCache && cache.get(url) != null) {
-            console.log("cache hit: " + url)
+            log("cache hit: " + url)
             resolve(cache.get(url))
             return
         }
@@ -290,14 +296,14 @@ function getData(url, isJson, headers, shouldCache) {
                 resolve({request: {headers: headers}});
             } else {
                 if (body != null) {
-                    console.log("body array length: " + body.length + ", url: " + url)
+                    log("body array length: " + body.length + ", url: " + url)
                     if (body.toString().indexOf("DOCTYPE") >= 0) {
                         response.body = "";
                     }
                 }
 
                 if (shouldCache) {
-                    console.log("cache miss: " + url)
+                    log("cache miss: " + url)
                     cache.put(url, response, config.cacheTtlMs)
                 }
                 
@@ -307,4 +313,4 @@ function getData(url, isJson, headers, shouldCache) {
     });
 }
 
-console.log("sandwich server started.");
+log("sandwich server started.");
