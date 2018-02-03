@@ -41,7 +41,7 @@ function requestReceived(req, res) {
         return
     }
     
-    getServers(!urlUtils.parse(req.url, true).query["bypassCache"]).then(servers => {
+    getServers(!!urlUtils.parse(req.url, true).query["bypassCache"]).then(servers => {
         if (req.url.replace("?bypassCache=true", "") == "" || req.url.replace("?bypassCache=true", "") == "/") {
             responselib.returnJSONResponse(res, servers);
             return null;
