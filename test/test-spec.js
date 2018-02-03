@@ -21,6 +21,28 @@ function checkForAtLeastOneOfEachDay(resultSet) {
 }
 
 describe('sandwich', () => {
+  it('Get the list of servers', (done) => {
+    rootServer
+      .get('/')
+      .expect(200)
+      .expect('Content-Type', /json/)
+      .end((err, res) => {
+        expect(res.body.length).to.greaterThan(0)
+        done()
+      });
+  });
+
+  it('Caching is enabled', (done) => {
+    rootServer
+      .get('/cache')
+      .expect(200)
+      .expect('Content-Type', /json/)
+      .end((err, res) => {
+        expect(res.body.length).to.greaterThan(0)
+        done()
+      });
+  });
+
   it('GetServerInfo', (done) => {
     rootServer
       .get('/client_interface/json/?switcher=GetServerInfo')
