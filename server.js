@@ -255,7 +255,7 @@ function getServers(bypassCache) {
                         "rootURL": r.request.headers["x-bmlt-root"],
                         "serverId": r.request.headers["x-bmlt-root-server-id"],
                         "status": (r != null && r.body != null),
-                        "coverageArea": (r != null && r.body != null) ? r.body[0] : null
+                        "coverageArea": (r != null && r.body != null && typeof r.body[0] == "object") ? r.body[0] : null
                     })
                  }
                 if (!bypassCache) cache.put("_", serversArray, config.cacheTtlMs)
