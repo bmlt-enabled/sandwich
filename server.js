@@ -73,7 +73,7 @@ function requestReceived(req, res) {
             var queryParams = urlUtils.parse(req.url, true).query
             var pathname = urlUtils.parse(req.url, true).pathname
             var filteredServers = []
-            var servicesParameterKey = req.url.indexOf("services[]") >= 0 ? "services[]" : "services"
+            var servicesParameterKey = req.url.indexOf("services[]") >= 0 || req.url.indexOf("services%5B%5D") >= 0 ? "services[]" : "services"
             var servicesQS = queryParams[servicesParameterKey] instanceof Array ? queryParams[servicesParameterKey] : [queryParams[servicesParameterKey]]
             
             for (service of servicesQS) {
