@@ -146,11 +146,11 @@ function requestReceived(req, res) {
             var formats = [];
             for (var i = 0; i < data.length; i++) {
                 // TODO: this is a weird bug in the BMLT where it return text/html content-type headers
-                if (data[i].statusCode != 200 || data[i].body == null || JSON.stringify(data[i].body).length < 10) continue;
+                if (data[i].statusCode !== 200 || data[i].body == null || JSON.stringify(data[i].body).length < 10) continue;
                 if (data[i].headers != null && data[i].headers['content-type'].indexOf("application/xml") < 0) {
                     for (var j = 0; j < utils.getMeetingData(req, data, i).length; j++) {
                         var serverId = getServer(data[i].request.headers["x-bmlt-root"]).serverId;
-                        if (req.url.indexOf('GetSearchResults') > -1) {
+                        if (req.url.indexOf('GetSearchResults') > -1 && (req.url.indexOf("data_field_key") < 0 || (req.url.indexOf("data_field_key") > -1 && req.url.indexOf("service_body_bigint") > -1))) {
                             utils.getMeetingDataPoint(req, data, i, j).service_body_bigint = prepare.addServerId(serverId, utils.getMeetingDataPoint(req, data, i, j).service_body_bigint);
                         } else if (utils.getMeetingDataPoint(req, data, i, j).id != null && utils.getMeetingDataPoint(req, data, i, j).parent_id != null) {
                             utils.getMeetingDataPoint(req, data, i, j).id = prepare.addServerId(serverId, utils.getMeetingDataPoint(req, data, i, j).id);
@@ -167,7 +167,7 @@ function requestReceived(req, res) {
 
             if (req.url.indexOf("get_used_formats") > -1) { 
                 for (var i = 0; i < data.length; i++) {
-                    if (data[i].statusCode != 200 || data[i].body == null || JSON.stringify(data[i].body).length < 10) continue;
+                    if (data[i].statusCode !== 200 || data[i].body == null || JSON.stringify(data[i].body).length < 10) continue;
                     for (var j = 0; j < utils.getFormatData(req, data, i).length; j++) {
                         var serverId = getServer(data[i].request.headers["x-bmlt-root"]).serverId;
                         utils.getFormatDataPoint(req, data, i, j).id = prepare.addServerId(serverId, utils.getFormatDataPoint(req, data, i, j).id);
