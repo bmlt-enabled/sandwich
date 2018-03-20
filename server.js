@@ -20,7 +20,7 @@ function log(message) {
 }
 
 function requestReceived(req, res) {
-    log('request received: ' + req.url);
+    log('request received: ' + req.url + ' from: ' + req.connection.remoteAddress);
     if ((req.url.indexOf(config.vdir) < 0)
         || req.url.indexOf('favicon') > -1) {
         res.writeHead(404);
