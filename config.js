@@ -27,6 +27,7 @@ module.exports = {
         "GetServiceBodies.php"
     ],
     debug: process.env["DEBUG"] || false,
+    tomatoUri: process.env["TOMATO_URI"],
     cacheCheck: function(url) {
         for (ce of this.cachedEndpoints) {
             if (url.indexOf(ce) >= 0) {

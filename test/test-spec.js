@@ -1,7 +1,7 @@
 var chai = require('chai');
 var supertest = require('supertest')
 var expect = chai.expect;
-var rootServer = supertest("http://localhost:8888/_/sandwich")
+var rootServer = supertest("https://localhost:8889/_/sandwich")
 
 function checkForAtLeastOneOfEachDay(resultSet) {
   var daysFound = [false, false, false, false, false, false, false]
@@ -21,46 +21,13 @@ function checkForAtLeastOneOfEachDay(resultSet) {
 }
 
 describe('sandwich', () => {
-    it('Get the list of servers', (done) => {
-        rootServer
-            .get('/')
-            .expect(200)
-            .expect('Content-Type', /json/)
-            .end((err, res) => {
-                expect(res.body.length).to.greaterThan(0)
-                done()
-            });
-    });
-
-    it('Caching is enabled', (done) => {
-        rootServer
-            .get('/cache')
-            .expect(200)
-            .expect('Content-Type', /json/)
-            .end((err, res) => {
-                expect(res.body.length).to.greaterThan(0)
-                done()
-            });
-    });
-
     it('GetServerInfo', (done) => {
         rootServer
             .get('/client_interface/json/?switcher=GetServerInfo')
             .expect(200)
             .expect('Content-Type', /json/)
             .end((err, res) => {
-                expect(res.body[0].version).to.equal("4.0.0")
-                done()
-            });
-    });
-
-    it('serverinfo.xml', (done) => {
-        rootServer
-            .get('/client_interface/serverInfo.xml')
-            .expect(200)
-            .expect('Content-Type', /xml/)
-            .end((err, res) => {
-                expect(res.text).to.equal("<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<bmltInfo>\r\n<serverVersion>\r\n<readableString>4.0.0</readableString>\r\n</serverVersion>\r\n</bmltInfo>")
+                expect(res.body[0].version).to.equal("5.0.0")
                 done()
             });
     });
@@ -147,6 +114,7 @@ describe('sandwich', () => {
             .expect(200)
             .expect('Content-Type', /json/)
             .end((err, res) => {
+
                 expect(res.body.length).greaterThan(19)
                 done()
             });
@@ -156,9 +124,10 @@ describe('sandwich', () => {
         rootServer
             .get('')
             .expect(200)
-            .expect('Content-Type', /json/)
+            .expect('Content-Type', 'text/plain')
             .end((err, res) => {
-                expect(res.body.length).greaterThan(0)
+                console.log(res.body)
+                expect(res.body).to.equal('tomato');
                 done()
             });
     });
@@ -167,20 +136,10 @@ describe('sandwich', () => {
         rootServer
             .get('/')
             .expect(200)
-            .expect('Content-Type', /json/)
+            .expect('Content-Type', 'text/plain')
             .end((err, res) => {
-                expect(res.body.length).greaterThan(0)
-                done()
-            });
-    });
-
-    it('Filter search', (done) => {
-        rootServer
-            .get('/filter?lat_val=35.5459732&long_val=-78.6398736')
-            .expect(200)
-            .expect('Content-Type', /json/)
-            .end((err, res) => {
-                expect(res.body.length).greaterThan(0)
+                console.log(res.body)
+                expect(res.body).to.equal('tomato');
                 done()
             });
     });
@@ -198,7 +157,7 @@ describe('sandwich', () => {
 
     it('Services search without formats', (done) => {
         rootServer
-            .get('/client_interface/json/?switcher=GetSearchResults&recursive=1&get_used_formats=1&services=1000001019')
+            .get('/client_interface/json/?switcher=GetSearchResults&recursive=1&get_used_formats=1&services=44')
             .expect(200)
             .expect('Content-Type', /json/)
             .end((err, res) => {
@@ -209,7 +168,7 @@ describe('sandwich', () => {
 
     it('Services search with formats', (done) => {
         rootServer
-            .get('/client_interface/json/?switcher=GetSearchResults&recursive=1&services=1000001019')
+            .get('/client_interface/json/?switcher=GetSearchResults&recursive=1&services=44')
             .expect(200)
             .expect('Content-Type', /json/)
             .end((err, res) => {
